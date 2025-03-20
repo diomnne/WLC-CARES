@@ -1,4 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+
 export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",
   devtools: { enabled: true },
@@ -12,6 +13,7 @@ export default defineNuxtConfig({
     "@nuxtjs/tailwindcss",
     "@nuxtjs/color-mode",
     "@vueuse/nuxt",
+    "nuxt-vuefire",
   ],
 
   tailwindcss: {
@@ -21,6 +23,10 @@ export default defineNuxtConfig({
 
   colorMode: {
     classSuffix: "",
+  },
+
+  typescript: {
+    shim: false,
   },
 
   imports: {
@@ -36,4 +42,18 @@ export default defineNuxtConfig({
       },
     ],
   },
+
+  vuefire: {
+    auth:{ enabled: true, sessionCookie: true },
+    config: {
+      apiKey: process.env.apiKey,
+      authDomain: process.env.authDomain,
+      projectId: process.env.projectId,
+      storageBucket: process.env.storageBucket,
+      messagingSenderId: process.env.messagingSenderId,
+      appId: process.env.appId,
+      measurementId: process.env.measurementId,
+    },
+  },
+  
 });
