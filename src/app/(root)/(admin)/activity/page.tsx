@@ -1,9 +1,9 @@
 "use client";
 
-import Navbar from "@/app/components/ui/navbar";
+
 import Sidebar from "@/app/components/ui/admin-sidebar";
 
-const DashboardPage = () => {
+const Activity = () => {
   return (
     <div className="flex flex-col h-screen">
       {/* Navbar */}
@@ -16,11 +16,11 @@ const DashboardPage = () => {
 
         {/* Main Content Area */}
         <main className="flex-1 p-6">
-          <h1 className="text-xl font-bold">This is the dashboard page</h1>
+          <h1 className="text-xl font-bold">This is the activity page</h1>
         </main>
       </div>
     </div>
   );
 };
 
-export default DashboardPage;
+export default Activity;
