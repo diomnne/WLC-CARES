@@ -1,22 +1,25 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link"; // ✅ import Link from next/link
 import { Bell } from "lucide-react";
 import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 
 export default function Navbar() {
   return (
     <nav className="flex items-center justify-between bg-white px-6 py-3 shadow-md fixed top-0 left-0 right-0 z-10">
-      {/* Logo */}
-      <div className="flex items-center space-x-2">
+      {/* Logo + Text wrapped in Link */}
+      <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition">
         <Image
-            src="/logo.svg" 
-            alt="WLC Cares Logo"
-            width={20} 
-            height={20}
-            className="w-10 h-10"
+          src="/logo.svg"
+          alt="WLC Cares Logo"
+          width={20}
+          height={20}
+          className="w-10 h-10"
         />
-        <h1 className="text-xl font-bold text-[#009da2]">WLC<span className="text-teal-400">CARES</span></h1>
-      </div>
+        <h1 className="text-xl font-bold text-[#009da2]">
+          WLC<span className="text-teal-400">CARES</span>
+        </h1>
+      </Link>
 
       {/* Search Bar */}
       <div className="absolute left-1/2 transform -translate-x-1/2 w-full max-w-md">
@@ -29,13 +32,13 @@ export default function Navbar() {
 
       {/* Icons */}
       <div className="flex items-center space-x-4">
-      <SignedOut>
-              <SignInButton />
-              <SignUpButton />
-            </SignedOut>
-            <SignedIn>
-              <UserButton />
-            </SignedIn>
+        <SignedOut>
+          <SignInButton />
+          <SignUpButton />
+        </SignedOut>
+        <SignedIn>
+          <UserButton />
+        </SignedIn>
       </div>
     </nav>
   );
