@@ -42,18 +42,17 @@ export default function AdminSidebar() {
 
         {/* Sidebar Items */}
         <nav className="space-y-6">
-          <SidebarItem icon={<LayoutGrid />} text="Dashboard" isOpen={isOpen} route="/contact" />
+          <SidebarItem icon={<LayoutGrid />} text="Dashboard" isOpen={isOpen} route="/" />
           <SidebarItem icon={<Activity />} text="Activity" isOpen={isOpen} route="/activity" />
-          <SidebarItem icon={<Users />} text="Manage Users" isOpen={isOpen} route="/users" />
-          <SidebarItem icon={<Calendar />} text="Schedule" isOpen={isOpen} route="/schedule" />
-          <SidebarItem icon={<Clipboard />} text="Medical Records" isOpen={isOpen} route="/records" />
-          <SidebarItem icon={<Pill />} text="Medicine Inventory" isOpen={isOpen} route="/inventory" />
+          <SidebarItem icon={<Users />} text="Manage Users" isOpen={isOpen} route="/manage-users" />
+          <SidebarItem icon={<Calendar />} text="Schedule" isOpen={isOpen} route="/consultation-schedules" />
+          <SidebarItem icon={<Clipboard />} text="Medical Records" isOpen={isOpen} route="/medical-records" />
+          <SidebarItem icon={<Pill />} text="Medicine Inventory" isOpen={isOpen} route="/medicine-inventory" />
         </nav>
       </div>
 
       {/* Content */}  
-      <div className={`flex-1 p-6 transition-all ${isOpen ? "ml-64" : "ml-16"}`}>
-        <h1 className="text-xl font-bold">Dashboard Content</h1>
+      <div className={`flex-1 p-6 transition-all ${isOpen ? "ml-50" : "ml-2"}`}>
       </div>
     </div>
   );
