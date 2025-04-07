@@ -1,5 +1,7 @@
 "use client";
-
+import { useUser } from "@clerk/nextjs";
+import { useEffect } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 import Sidebar from "@/app/components/ui/admin-sidebar";
 
@@ -8,7 +10,6 @@ const Dashboard = () => {
     <div className="flex flex-col h-screen">
       {/* Navbar */}
       
-
       {/* Sidebar & Main Content */}
       <div className="flex flex-1">
         {/* Sidebar */}
