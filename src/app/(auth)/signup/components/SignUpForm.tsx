@@ -14,9 +14,9 @@ import { signup } from "@/lib/auth-actions";
 
 export function SignUpForm() {
   return (
-    <Card className="mx-auto max-w-sm">
+    <Card className="mx-auto w-full max-w-sm sm:max-w-md">
       <CardHeader>
-        <CardTitle className="text-xl">Sign Up</CardTitle>
+      <CardTitle className="text-2xl font-semibold text-[#2fd5bd]">Create an account</CardTitle>
         <CardDescription>
           Enter your information to create an account
         </CardDescription>
@@ -58,7 +58,7 @@ export function SignUpForm() {
               <Label htmlFor="password">Password</Label>
               <Input name="password" id="password" type="password" />
             </div>
-            <Button formAction={signup} type="submit" className="w-full">
+            <Button formAction={signup} type="submit" className="bg-[#2fd5bd] text-white hover:bg-[#64decb]">
               Create an account
             </Button>
           </div>
@@ -66,7 +66,7 @@ export function SignUpForm() {
         <div className="mt-4 text-center text-sm">
           Already have an account?{" "}
           <Link href="/login" className="underline">
-            Sign in
+            Login
           </Link>
         </div>
       </CardContent>
