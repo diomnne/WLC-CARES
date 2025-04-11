@@ -42,7 +42,7 @@ export default function AdminSidebar() {
 
         {/* Sidebar Items */}
         <nav className="space-y-6">
-          <SidebarItem icon={<LayoutGrid />} text="Dashboard" isOpen={isOpen} route="/" />
+          <SidebarItem icon={<LayoutGrid />} text="Dashboard" isOpen={isOpen} route="/admin-dashboard" />
           <SidebarItem icon={<Activity />} text="Activity" isOpen={isOpen} route="/activity" />
           <SidebarItem icon={<Users />} text="Manage Users" isOpen={isOpen} route="/manage-users" />
           <SidebarItem icon={<Calendar />} text="Schedule" isOpen={isOpen} route="/consultation-schedules" />
