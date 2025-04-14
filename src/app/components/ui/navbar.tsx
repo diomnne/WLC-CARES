@@ -2,36 +2,44 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell } from "lucide-react";
+import { Bell, Search } from "lucide-react";
 import LoginButton from "@/components/ui/LoginLogoutButton";
 
 export default function Navbar() {
   return (
-    <nav className="flex items-center justify-between bg-white px-6 py-3 shadow-md fixed top-0 left-0 right-0 z-10">
+    <nav className="flex items-center justify-between bg-white px-4 py-3 shadow-md fixed top-0 left-0 right-0 z-10">
       
+      {/* Logo and Title */}
       <div className="flex items-center space-x-2">
         <Image
           src="/logo.svg"
           alt="WLC Cares Logo"
-          width={20}
-          height={20}
+          width={40}
+          height={40}
           className="w-10 h-10"
         />
-        <h1 className="text-xl font-bold text-[#009da2]">
+        <h1 className="text-xl font-bold text-[#009da2] hidden sm:inline">
           WLC<span className="text-teal-400">CARES</span>
         </h1>
       </div>
 
       {/* Search Bar */}
-      <div className="absolute left-1/2 transform -translate-x-1/2 w-full max-w-md">
+      <div className="absolute left-1/2 transform -translate-x-1/2 w-[90%] sm:max-w-sm hidden sm:flex items-center">
+        <Search className="absolute left-3 text-gray-500 w-5 h-5" />
         <input
           type="text"
           placeholder="Search"
-          className="w-full max-w-md px-4 py-2 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#009da2]"
+          className="w-full pl-10 pr-4 py-2 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#009da2]"
         />
       </div>
 
-      {/* Icons */}
+
+      {/* Search Icon Only on Small Screens */}
+      <div className="sm:hidden absolute left-1/2 transform -translate-x-1/2">
+        <Search className="text-gray-600 w-6 h-6" />
+      </div>
+
+      {/* Icons + Login */}
       <div className="flex items-center space-x-4">
         <Link href="/notifications" className="relative">
           <Bell className="w-6 h-6 text-gray-600 hover:text-[#009da2] transition" />
