@@ -1,5 +1,7 @@
 import { type Metadata } from 'next'
 import Navbar from './components/ui/navbar'
+import { Toaster } from "@/components/ui/sonner"
+
 import {
   ClerkProvider,
   SignInButton,
@@ -39,6 +41,7 @@ export default function RootLayout({
           <header className="flex justify-end items-center gap-4">
           </header>
           {children}
+          <Toaster />
         </body>
       </html>
     </ClerkProvider>
