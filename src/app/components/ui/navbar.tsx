@@ -18,7 +18,7 @@ export default function Navbar() {
           height={40}
           className="w-10 h-10"
         />
-        <h1 className="text-xl font-bold text-[#009da2] hidden sm:inline">
+        <h1 className="text-xl font-bold text-[#009da2] hidden sm:inline cursor-default select-none">
           WLC<span className="text-teal-400">CARES</span>
         </h1>
       </div>
