@@ -24,10 +24,7 @@ export function LoginForm() {
   
       toast("Too many failed login attempts", {
         description: `Please wait ${cooldown} seconds before trying again.`,
-        action: {
-          label: "Dismiss",
-          onClick: () => console.log("Dismissed"),
-        },
+        duration: 30000, // 30 seconds
       });
   
       const interval = setInterval(() => {
