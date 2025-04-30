@@ -3,19 +3,30 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import { logActivity } from "@/utils/supabase/logger";
 
 export async function login(formData: FormData) {
   const supabase = createClient();
 
-  const data = {
-    email: formData.get("email") as string,
-    password: formData.get("password") as string,
-  };
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
 
-  const { error } = await supabase.auth.signInWithPassword(data);
+  const { data: loginData, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
   if (error) {
     return { error: error.message };
+  }
+
+  if (loginData.user) {
+    await logActivity({
+      userId: loginData.user.id,
+      email: loginData.user.email || email,
+      role: loginData.user.user_metadata?.role || "Student",
+      action: `User logged in`, 
+    });
   }
 
   revalidatePath("/student-dashboard", "layout");
@@ -23,31 +34,43 @@ export async function login(formData: FormData) {
 }
 
 
+
 export async function signup(formData: FormData) {
   const supabase = createClient();
 
   const firstName = formData.get("first-name") as string;
   const lastName = formData.get("last-name") as string;
+  const email = formData.get("email") as string;
+
   const data = {
-    email: formData.get("email") as string,
+    email,
     password: formData.get("password") as string,
     options: {
       data: {
-        full_name: `${firstName + " " + lastName}`,
-        email: formData.get("email") as string,
+        full_name: `${firstName} ${lastName}`,
+        email,
       },
     },
   };
 
-  const { error } = await supabase.auth.signUp(data);
+  const role = formData.get("role") as string;
+  const { data: signUpData, error } = await supabase.auth.signUp(data);
 
-  if (error) {
+  if (error || !signUpData.user) {
     redirect("/error");
   }
+
+  await logActivity({
+    userId: signUpData.user.id,
+    email: signUpData.user.email || email,
+    role: "Student", 
+    action: "New user signed up",
+  });
 
   revalidatePath("/", "layout");
   redirect("/");
 }
+
 
 export async function signout() {
   const supabase = createClient();
