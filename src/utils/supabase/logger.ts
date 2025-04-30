@@ -4,20 +4,20 @@ const supabase = createClient();
 
 export async function logActivity({
   userId,
+  email,
   role,
   action,
-  description,
 }: {
   userId: string;
+  email: string;
   role: string;
   action: string;
-  description: string;
 }) {
   const { error } = await supabase.from("activity_logs").insert({
     user_id: userId,
+    email,
     role,
     action,
-    description,
     timestamp: new Date().toISOString(),
   });
 
