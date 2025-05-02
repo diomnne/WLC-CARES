@@ -7,7 +7,7 @@ import LoginButton from "@/components/ui/LoginLogoutButton";
 
 export default function Navbar() {
   return (
-    <nav className="flex items-center justify-between bg-white px-4 py-3 shadow-md fixed top-0 left-0 right-0 z-10">
+    <nav className="flex items-center justify-between bg-white px-4 py-3 shadow-sm fixed top-0 left-0 right-0 z-10">
       
       {/* Logo and Title */}
       <div className="flex items-center space-x-2">
