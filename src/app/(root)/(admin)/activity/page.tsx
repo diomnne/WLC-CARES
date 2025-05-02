@@ -73,10 +73,23 @@ const Activity = () => {
         <Sidebar />
 
         <main className="flex-1 p-6 flex flex-col">
-          <h1 className="text-xl font-bold mb-6">Log Trail</h1>
+          <h1 className="text-xl font-bold mb-6">User Activity</h1>
 
-          {/* ... Search input and button ... */}
-
+          <div className="flex items-center gap-3 mb-6">
+            <div className="relative w-full max-w-md">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                className="bg-white border border-gray-200 text-gray-700 text-sm rounded-sm pl-10 pr-4 py-1.5 w-full"
+                placeholder="Search Logs"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+          
           <div className="flex-1 overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
@@ -96,7 +109,6 @@ const Activity = () => {
                 <TableBody>
                   {filteredLogs.map((log) => (
                     <TableRow key={log.id}>
-                      {/* Access data from the meta column */}
                       <TableCell className={columnWidths.user}>{log.email}</TableCell>
                       <TableCell className={columnWidths.role}>{log.role}</TableCell>
                       <TableCell className={columnWidths.action}>{log.action}</TableCell>
