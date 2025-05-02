@@ -1,19 +1,19 @@
 "use client";
-import { JSX, useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation"; 
+import { JSX } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { Menu, LayoutGrid, Activity, Users, Calendar, Clipboard, Pill } from "lucide-react";
+import { useState } from "react";
 
-function SidebarItem({ icon, text, isOpen, route }: { icon: JSX.Element; text: string; isOpen: boolean; route: string }) {
+function SidebarItem({ icon, text, route }: { icon: JSX.Element; text: string; route: string }) {
   const router = useRouter();
   const pathname = usePathname();
-
   const isActive = pathname === route;
 
   return (
     <button
       onClick={() => router.push(route)}
       className={`flex items-center w-full p-3 rounded-md cursor-pointer transition-all
-        ${isOpen ? "justify-start space-x-4" : "justify-center"}
+        justify-start space-x-4
         ${
           isActive
             ? "bg-white text-[#009da2]"
@@ -21,59 +21,58 @@ function SidebarItem({ icon, text, isOpen, route }: { icon: JSX.Element; text: s
         }`}
     >
       <span className="text-[20px]">{icon}</span>
-      {isOpen && <span className="whitespace-nowrap">{text}</span>}
+      <span className="whitespace-nowrap">{text}</span>
     </button>
   );
 }
 
 export default function AdminSidebar() {
-  const [isOpen, setIsOpen] = useState<boolean | null>(null);
-  
-  useEffect(() => {
-    const savedState = localStorage.getItem("sidebar-open");
-    setIsOpen(savedState === null ? true : savedState === "true");
-  }, []);
-  
-  useEffect(() => {
-    if (isOpen !== null) {
-      localStorage.setItem("sidebar-open", isOpen.toString());
-    }
-  }, [isOpen]);
-
-  if (isOpen === null) {
-    return null; 
-  }
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <div className="flex">
-      {/* Sidebar Container */}
-      <div
-        className={`fixed left-0 top-16 bg-[#ffebea] p-5 transition-all duration-300 ${
-          isOpen ? "w-64 p-5" : "w-16 p-3"
-        } h-[calc(100vh-4rem)]`}
-      >
-        {/* Menu Button */}
-        <button
-          className="mb-6 text-gray-600 focus:outline-none cursor-pointer"
-          onClick={() => setIsOpen((prev) => !prev)}
-        >
-          <Menu size={28} />
-        </button>
+    <div className="flex relative">
+      {/* Overlay for Small Screens */}
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed top-0 left-0 w-full h-full bg-black opacity-50 z-30 transition-opacity duration-300 md:hidden"
+        ></div>
+      )}
 
+      {/* for small screens */}
+      {!isSidebarOpen && (
+        <button
+          onClick={() => setIsSidebarOpen(true)}
+          className="fixed top-16 left-4 bg-white p-2 mt-4 rounded-md z-50 md:hidden"
+        >
+          <Menu className="h-6 w-6 text-gray-700" />
+        </button>
+      )}
+
+      <div
+        className={`fixed left-0 bg-[#ffebea] border-t-1 border-t-gray-200 p-5 w-64 transition-transform duration-300 z-40
+          ${
+            isSidebarOpen
+              ? "translate-x-0 shadow-lg h-screen top-0" 
+              : "-translate-x-full h-full top-16 md:h-[calc(100vh-4rem)]"
+          }
+          md:translate-x-0 md:top-16 md:h-[calc(100vh-4rem)] md:block
+        `}
+      >
         {/* Sidebar Items */}
-        <nav className="space-y-6">
-          <SidebarItem icon={<LayoutGrid />} text="Dashboard" isOpen={isOpen} route="/admin-dashboard" />
-          <SidebarItem icon={<Activity />} text="Activity" isOpen={isOpen} route="/activity" />
-          <SidebarItem icon={<Users />} text="Manage Users" isOpen={isOpen} route="/manage-users" />
-          <SidebarItem icon={<Calendar />} text="Schedule" isOpen={isOpen} route="/consultation-schedules" />
-          <SidebarItem icon={<Clipboard />} text="Medical Records" isOpen={isOpen} route="/medical-records" />
-          <SidebarItem icon={<Pill />} text="Medicine Inventory" isOpen={isOpen} route="/medicine-inventory" />
+        <nav className="space-y-2">
+          <SidebarItem icon={<LayoutGrid />} text="Dashboard" route="/admin-dashboard" />
+          <SidebarItem icon={<Activity />} text="User Activity" route="/activity" />
+          <SidebarItem icon={<Users />} text="Manage Users" route="/manage-users" />
+          <SidebarItem icon={<Calendar />} text="Schedule" route="/consultation-schedules" />
+          <SidebarItem icon={<Clipboard />} text="Medical Records" route="/medical-records" />
+          <SidebarItem icon={<Pill />} text="Medicine Inventory" route="/medicine-inventory" />
         </nav>
       </div>
- 
-      <div className={`flex-1 p-6 transition-all ${isOpen ? "ml-50" : "ml-2"}`}>
+
+      <div className={`flex-1 p-6 ${isSidebarOpen ? "ml-0" : "md:ml-53"}`}>
+        {/* Main Content Area */}
       </div>
     </div>
   );
 }
-
