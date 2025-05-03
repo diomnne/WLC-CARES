@@ -2,7 +2,7 @@
 import { JSX } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Menu, LayoutGrid, Activity, Users, Calendar, Clipboard, Pill } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function SidebarItem({ icon, text, route }: { icon: JSX.Element; text: string; route: string }) {
   const router = useRouter();
@@ -28,10 +28,25 @@ function SidebarItem({ icon, text, route }: { icon: JSX.Element; text: string; r
 
 export default function AdminSidebar() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [canShowButton, setCanShowButton] = useState(true); // New state
+
+  useEffect(() => {
+    // When sidebar starts closing, hide the button immediately
+    if (!isSidebarOpen) {
+      setCanShowButton(false);
+      // Introduce a delay after the closing transition to allow the button to reappear
+      const timer = setTimeout(() => {
+        setCanShowButton(true);
+      }, 300); // Adjust this delay to match your sidebar's transition duration
+
+      return () => clearTimeout(timer); // Cleanup the timer if the component unmounts
+    } else {
+      setCanShowButton(true); // Show button when sidebar is open (for initial state or reopening)
+    }
+  }, [isSidebarOpen]);
 
   return (
     <div className="flex relative">
-      {/* Overlay for Small Screens */}
       {isSidebarOpen && (
         <div
           onClick={() => setIsSidebarOpen(false)}
@@ -40,7 +55,7 @@ export default function AdminSidebar() {
       )}
 
       {/* for small screens */}
-      {!isSidebarOpen && (
+      {!isSidebarOpen && canShowButton && (
         <button
           onClick={() => setIsSidebarOpen(true)}
           className="fixed top-16 left-4 bg-white p-2 mt-4 rounded-md z-50 md:hidden"
@@ -53,7 +68,7 @@ export default function AdminSidebar() {
         className={`fixed left-0 bg-[#ffebea] border-t-1 border-t-gray-200 p-5 w-64 transition-transform duration-300 z-40
           ${
             isSidebarOpen
-              ? "translate-x-0 shadow-lg h-screen top-0" 
+              ? "translate-x-0 shadow-lg h-screen top-0"
               : "-translate-x-full h-full top-16 md:h-[calc(100vh-4rem)]"
           }
           md:translate-x-0 md:top-16 md:h-[calc(100vh-4rem)] md:block
@@ -64,13 +79,13 @@ export default function AdminSidebar() {
           <SidebarItem icon={<LayoutGrid />} text="Dashboard" route="/admin-dashboard" />
           <SidebarItem icon={<Activity />} text="User Activity" route="/activity" />
           <SidebarItem icon={<Users />} text="Manage Users" route="/manage-users" />
-          <SidebarItem icon={<Calendar />} text="Schedule" route="/consultation-schedules" />
+          <SidebarItem icon={<Calendar />} text="Consultations" route="/consultation-schedules" />
           <SidebarItem icon={<Clipboard />} text="Medical Records" route="/medical-records" />
           <SidebarItem icon={<Pill />} text="Medicine Inventory" route="/medicine-inventory" />
         </nav>
       </div>
 
-      <div className={`flex-1 p-6 ${isSidebarOpen ? "ml-0" : "md:ml-53"}`}>
+      <div className={`flex-1 p-6 ${isSidebarOpen ? "ml-0" : "md:ml-64"}`}>
         {/* Main Content Area */}
       </div>
     </div>
