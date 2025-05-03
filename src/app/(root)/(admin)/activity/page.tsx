@@ -15,7 +15,7 @@ import {
   TableFooter,
 } from "@/components/ui/table";
 
-interface ActivityLog {
+interface ActivityLogWithRole {
   id: string;
   userId: string;
   email: string;
@@ -28,33 +28,33 @@ const supabase = createClient();
 
 const Activity = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLogWithRole[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchLogs = async () => {
+    const fetchLogsFromView = async () => {
       setLoading(true);
       const { data, error } = await supabase
-        .from("activity_logs")
+        .from("logs") // Fetch data from the "logs" view
         .select("*")
         .order("timestamp", { ascending: false });
 
       if (error) {
-        console.error("Error fetching logs:", error.message);
+        console.error("Error fetching logs from view:", error.message);
       } else {
-        setActivityLogs(data as ActivityLog[]);
+        setActivityLogs(data as ActivityLogWithRole[]);
       }
 
       setLoading(false);
     };
 
-    fetchLogs();
+    fetchLogsFromView();
   }, []);
 
   const filteredLogs = activityLogs.filter((log) =>
     log.userId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.email?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    log.role?.toLowerCase().includes(searchTerm.toLowerCase()) ||      
+    log.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    log.role?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     log.action?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -89,7 +89,7 @@ const Activity = () => {
               />
             </div>
           </div>
-          
+
           <div className="flex-1 overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
