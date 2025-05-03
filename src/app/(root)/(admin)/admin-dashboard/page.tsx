@@ -37,14 +37,14 @@ const AdminDashboard = () => {
 
           {/* top row widgets */}
           <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-[#4bbdb9] border-1 border-b-[#4bbdb9] shadow rounded-md p-4 flex items-center justify-between">
+            <div className="bg-white border-1 border-b-gray-100 shadow rounded-md p-4 flex items-center justify-between">
               <div>
-                <div className="text-xl text-white font-bold">
+                <div className="text-xl text-gray-800 font-bold">
                   3
                 </div>
-                <div className="text-sm text-white">Active Users</div>
+                <div className="text-sm text-gray-500">Active Users</div>
               </div>
-              <Activity className="w-10 h-10 text-white" />
+              <Activity className="w-10 h-10 text-[#009da2]" />
             </div>
 
             <div className="bg-white border-1 border-b-gray-100 shadow rounded-md p-4 flex items-center justify-between">
@@ -54,7 +54,7 @@ const AdminDashboard = () => {
                 </div>
                 <div className="text-sm text-gray-500">Total Users</div>
               </div>
-              <Users className="w-10 h-10 text-gray-400" />
+              <Users className="w-10 h-10 text-[#8cdbed]" />
             </div>
 
             <div className="bg-white border-1 border-b-gray-100 shadow rounded-md p-4 flex items-center justify-between">
@@ -64,7 +64,7 @@ const AdminDashboard = () => {
                 </div>
                 <div className="text-sm text-gray-500">New Users</div>
               </div>
-              <UserPlus className="w-10 h-10 text-gray-400" />
+              <UserPlus className="w-10 h-10 text-[#addbda]" />
             </div>
 
             <div className="bg-white border-1 border-b-gray-100 shadow rounded-md p-4 flex items-center justify-between">
@@ -74,7 +74,7 @@ const AdminDashboard = () => {
                 </div>
                 <div className="text-sm text-gray-500">Pending Requests</div>
               </div>
-              <Inbox className="w-10 h-10 text-gray-400" />
+              <Inbox className="w-10 h-10 text-[#9de0bf]" />
             </div>
           </div>
 
