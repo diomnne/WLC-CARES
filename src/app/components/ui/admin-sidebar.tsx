@@ -85,7 +85,7 @@ export default function AdminSidebar() {
         </nav>
       </div>
 
-      <div className={`flex-1 p-6 ${isSidebarOpen ? "ml-0" : "md:ml-64"}`}>
+      <div className={`flex-1 p-6 ${isSidebarOpen ? "ml-0" : "md:ml-53"}`}>
         {/* Main Content Area */}
       </div>
     </div>

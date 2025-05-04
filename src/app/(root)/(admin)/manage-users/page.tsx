@@ -1,7 +1,6 @@
 "use client";
-
-
 import Sidebar from "@/app/components/ui/admin-sidebar";
+import { createClient } from "@/utils/supabase/client";
 
 const ManageUsers = () => {
   return (
@@ -16,7 +15,7 @@ const ManageUsers = () => {
 
         {/* Main Content Area */}
         <main className="flex-1 p-6">
-          <h1 className="text-xl font-bold">This is the users page</h1>
+          <h1 className="text-xl font-bold">Manage Users</h1>
         </main>
       </div>
     </div>
