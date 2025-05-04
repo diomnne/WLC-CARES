@@ -26,6 +26,7 @@ const AdminDashboard = () => {
       const { count: total, error: totalError } = await supabase
         .from("profiles")
         .select("*", { count: "exact", head: true })
+        .neq("role", "Admin")
 
       if (!totalError) setTotalUsers(total)
 
@@ -55,6 +56,7 @@ const AdminDashboard = () => {
       const { data: rolesData, error: roleError } = await supabase
         .from("profiles")
         .select("role")
+        .neq("role", "Admin")
 
       if (roleError) {
         console.error("Error fetching roles:", roleError.message)
