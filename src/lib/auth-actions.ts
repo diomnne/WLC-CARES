@@ -23,9 +23,7 @@ export async function login(formData: FormData) {
   if (loginData.user) {
     await logActivity({
       userId: loginData.user.id,
-      email: loginData.user.email || email,
-      role: loginData.user.user_metadata?.role || "Student",
-      action: `User logged in`, 
+      action: `User logged in`,
     });
   }
 
@@ -33,18 +31,17 @@ export async function login(formData: FormData) {
   redirect("/student-dashboard");
 }
 
-
-
 export async function signup(formData: FormData) {
   const supabase = createClient();
 
   const firstName = formData.get("first-name") as string;
   const lastName = formData.get("last-name") as string;
   const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
 
   const data = {
     email,
-    password: formData.get("password") as string,
+    password,
     options: {
       data: {
         full_name: `${firstName} ${lastName}`,
@@ -53,7 +50,6 @@ export async function signup(formData: FormData) {
     },
   };
 
-  const role = formData.get("role") as string;
   const { data: signUpData, error } = await supabase.auth.signUp(data);
 
   if (error || !signUpData.user) {
@@ -62,15 +58,12 @@ export async function signup(formData: FormData) {
 
   await logActivity({
     userId: signUpData.user.id,
-    email: signUpData.user.email || email,
-    role: "Student", 
     action: "New user signed up",
   });
 
   revalidatePath("/", "layout");
   redirect("/");
 }
-
 
 export async function signout() {
   const supabase = createClient();
