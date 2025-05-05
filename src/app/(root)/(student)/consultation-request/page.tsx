@@ -15,7 +15,7 @@ const ConsultationRequest = () => {
 
         {/* Main Content Area */}
         <main className="flex-1 p-6">
-          <h1 className="text-xl font-bold">Request a medical consultation</h1>
+          <h1 className="text-xl font-bold pt-4">Request a medical consultation</h1>
         </main>
       </div>
     </div>
