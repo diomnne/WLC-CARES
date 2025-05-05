@@ -28,20 +28,20 @@ function SidebarItem({ icon, text, route }: { icon: JSX.Element; text: string; r
 
 export default function StudentSidebar() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [canShowButton, setCanShowButton] = useState(true); // New state
+  const [canShowButton, setCanShowButton] = useState(true); 
 
   useEffect(() => {
-    // When sidebar starts closing, hide the button immediately
+    
     if (!isSidebarOpen) {
       setCanShowButton(false);
-      // Introduce a delay after the closing transition to allow the button to reappear
+      
       const timer = setTimeout(() => {
         setCanShowButton(true);
-      }, 300); // Adjust this delay to match your sidebar's transition duration
+      }, 300); 
 
-      return () => clearTimeout(timer); // Cleanup the timer if the component unmounts
+      return () => clearTimeout(timer); 
     } else {
-      setCanShowButton(true); // Show button when sidebar is open (for initial state or reopening)
+      setCanShowButton(true); 
     }
   }, [isSidebarOpen]);
 
@@ -58,7 +58,7 @@ export default function StudentSidebar() {
       {!isSidebarOpen && canShowButton && (
         <button
           onClick={() => setIsSidebarOpen(true)}
-          className="fixed top-16 left-4 bg-white p-2 mt-4 rounded-md z-50 md:hidden"
+          className="fixed top-16 left-4 bg-white p-2 mt-4 rounded-md z-10 md:hidden"
         >
           <Menu className="h-6 w-6 text-gray-700" />
         </button>
@@ -76,6 +76,7 @@ export default function StudentSidebar() {
       >
         {/* Sidebar Items */}
         <nav className="space-y-2">
+          <div className="pt-20 md:pt-0"></div>
           <SidebarItem icon={<LayoutGrid />} text="Dashboard" route="/student-dashboard" />
           <SidebarItem icon={<Clipboard />} text="My Medical Record" route="/student-record" />
           <SidebarItem icon={<Stethoscope />} text="Request Consultation" route="/consultation-request" />
