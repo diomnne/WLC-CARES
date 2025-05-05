@@ -107,7 +107,7 @@ const AdminDashboard = () => {
 
         <main className="flex-1 p-6">
           <div>
-            <h1 className="text-xl font-bold">Dashboard</h1>
+            <h1 className="text-xl font-bold pt-4">Dashboard</h1>
           </div>
 
           {/* Top row widgets */}
