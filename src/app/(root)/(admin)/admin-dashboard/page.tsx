@@ -22,81 +22,64 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      // Total users
-      const { count: total, error: totalError } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true })
-        .neq("role", "Admin")
-
-      if (!totalError) setTotalUsers(total)
-
-      // Student count
-      const { count: students, error: studentError } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true })
-        .eq("role", "Student")
-
-      if (!studentError) setStudentCount(students)
-
-      // Clinic staff count
       const clinicStaffRoles = [
         "Doctor",
         "Nurse",
         "Medical Records Officer",
         "Medicine Inventory Handler",
       ]
-      const { count: staff, error: staffError } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true })
-        .in("role", clinicStaffRoles)
-
+  
+      const [
+        { count: total, error: totalError },
+        { count: students, error: studentError },
+        { count: staff, error: staffError },
+        { data: rolesData, error: roleError },
+        { data: activityRows, error: activityError },
+      ] = await Promise.all([
+        supabase.from("profiles").select("*", { count: "exact", head: true }).neq("role", "Admin"),
+        supabase.from("profiles").select("*", { count: "exact", head: true }).eq("role", "Student"),
+        supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true })
+          .in("role", clinicStaffRoles),
+        supabase.from("profiles").select("role").neq("role", "Admin"),
+        supabase.rpc("get_activity_counts_last_7_days"),
+      ])
+  
+      if (!totalError) setTotalUsers(total)
+      if (!studentError) setStudentCount(students)
       if (!staffError) setClinicStaffCount(staff)
-
-      // Role distribution for pie chart
-      const { data: rolesData, error: roleError } = await supabase
-        .from("profiles")
-        .select("role")
-        .neq("role", "Admin")
-
-      if (roleError) {
-        console.error("Error fetching roles:", roleError.message)
-        return
+  
+      if (!roleError && rolesData) {
+        const roleCounts: Record<string, number> = {}
+        rolesData.forEach((user) => {
+          const role = user.role || "Unknown"
+          roleCounts[role] = (roleCounts[role] || 0) + 1
+        })
+  
+        const colorMap = {
+          Student: "#b2f0e8",
+          Doctor: "#8de5db",
+          Nurse: "#2fc4b2",
+          "Medical Records Officer": "#289c8e",
+          "Medicine Inventory Handler": "#117c6f",
+          Unknown: "#ccc",
+        }
+  
+        const formattedData = Object.entries(roleCounts).map(([role, count]) => ({
+          role,
+          count,
+          fill: colorMap[role as keyof typeof colorMap] || "#ccc",
+        }))
+  
+        setRoleData(formattedData)
       }
-
-      const roleCounts: Record<string, number> = {}
-      rolesData?.forEach((user) => {
-        const role = user.role || "Unknown"
-        roleCounts[role] = (roleCounts[role] || 0) + 1
-      })
-
-      const colorMap = {
-        Student: "#b2f0e8",
-        Doctor: "#8de5db",
-        Nurse: "#2fc4b2",
-        "Medical Records Officer": "#289c8e",
-        "Medicine Inventory Handler": "#117c6f",
-        Unknown: "#ccc",
-      }
-
-      const formattedData = Object.entries(roleCounts).map(([role, count]) => ({
-        role,
-        count,
-        fill: colorMap[role as keyof typeof colorMap] || "#ccc",
-      }))
-
-      setRoleData(formattedData)
-
-      // Fetch activity data from Supabase function
-      const { data: activityRows, error: activityError } = await supabase
-        .rpc("get_activity_counts_last_7_days")
-
+  
       if (!activityError && activityRows) {
         setActivityData(activityRows)
-      } else {
-        console.error("Error fetching activity data:", activityError?.message)
       }
     }
-
+  
     fetchData()
   }, [])
 
@@ -177,10 +160,10 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Bottom row */}
+          {/* Bottom row 
           <div className="mt-6 bg-white border shadow rounded-md p-4">
             <div className="font-semibold mb-2">Medical Consultations</div>
-          </div>
+          </div> */}
         </main>
       </div>
     </div>
