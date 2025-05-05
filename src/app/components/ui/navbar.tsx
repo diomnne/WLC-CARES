@@ -1,14 +1,26 @@
 "use client";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Bell, Search } from "lucide-react";
 import LoginButton from "@/components/ui/LoginLogoutButton";
 
 export default function Navbar() {
-  return (
-    <nav className="flex items-center justify-between bg-white px-4 py-3 border-b-1 border-b-gray-200 fixed top-0 left-0 right-0 z-10">
+  const [notificationCount, setNotificationCount] = useState(0);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
       
+      const count = 0;
+
+      setNotificationCount(count);
+    };
+
+    fetchNotifications();
+  }, []);
+
+  return (
+    <nav className="flex items-center justify-between bg-white px-4 sm:px-6 md:px-8 lg:px-12 py-3 border-b border-b-gray-200 fixed top-0 left-0 right-0 z-10">
       {/* Logo and Title */}
       <div className="flex items-center space-x-2">
         <Image
@@ -33,7 +45,6 @@ export default function Navbar() {
         />
       </div>
 
-
       {/* Search Icon Only on Small Screens */}
       <div className="sm:hidden absolute left-1/2 transform -translate-x-1/2">
         <Search className="text-gray-600 w-6 h-6" />
@@ -43,7 +54,11 @@ export default function Navbar() {
       <div className="flex items-center space-x-4">
         <Link href="/notifications" className="relative">
           <Bell className="w-6 h-6 text-gray-600 hover:text-[#009da2] transition" />
-          <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full px-1">3</span>
+          {notificationCount > 0 && (
+            <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full px-1">
+              {notificationCount}
+            </span>
+          )}
         </Link>
         <LoginButton />
       </div>
