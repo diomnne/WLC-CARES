@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import Sidebar from "@/app/components/ui/admin-sidebar";
+import Sidebar from "@/app/components/ui/student-sidebar";
 
 const REQUIRED_ROLE = "Student";
 
@@ -25,7 +25,7 @@ async function getUserAndProfile() {
   return { user, profile, error: profileError };
 }
 
-export default async function AdminLayout({ children }: { children: ReactNode }) {
+export default async function StudentLayout({ children }: { children: ReactNode }) {
   const { user, profile, error } = await getUserAndProfile();
 
   if (!user) {
