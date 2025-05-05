@@ -1,9 +1,9 @@
 import { ReactNode } from "react";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import Sidebar from "@/app/components/ui/admin-sidebar";
+//import Sidebar from "@/app/components/ui/doctor-sidebar";
 
-const REQUIRED_ROLE = "Student";
+const REQUIRED_ROLE = "Doctor";
 
 async function getUserAndProfile() {
   const supabase = createClient();
@@ -25,7 +25,7 @@ async function getUserAndProfile() {
   return { user, profile, error: profileError };
 }
 
-export default async function AdminLayout({ children }: { children: ReactNode }) {
+export default async function DoctorLayout({ children }: { children: ReactNode }) {
   const { user, profile, error } = await getUserAndProfile();
 
   if (!user) {
@@ -39,10 +39,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const userRole = profile.role;
   if (userRole !== REQUIRED_ROLE) {
     switch (userRole) {
+      case "Student":
+        redirect("/student-dashboard?error=access_denied");
       case "Admin":
         redirect("/admin-dashboard?error=access_denied");
-      case "Doctor":
-        redirect("/doctor-dashboard?error=access_denied");
       case "Nurse":
         redirect("/nurse-dashboard?error=access_denied");
       case "Medical Records Officer":
@@ -56,7 +56,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   return (
     <div className="">
-      <Sidebar />
+      {/* <Sidebar /> */}
       <main className="">
         {children}
       </main>
