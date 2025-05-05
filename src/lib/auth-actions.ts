@@ -20,16 +20,55 @@ export async function login(formData: FormData) {
     return { error: error.message };
   }
 
-  if (loginData.user) {
+  const user = loginData.user;
+
+  if (user) {
+
+    const { data: userProfile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError || !userProfile) {
+      return { error: "Unable to fetch user role." };
+    }
+
+    const role = userProfile.role;
+
     await logActivity({
-      userId: loginData.user.id,
+      userId: user.id,
       action: `User logged in`,
     });
-  }
 
-  revalidatePath("/student-dashboard", "layout");
-  redirect("/student-dashboard");
+    revalidatePath("/", "layout");
+
+    switch (role) {
+      case "Admin":
+        redirect("/admin-dashboard");
+        break;
+      case "Student":
+        redirect("/student-dashboard");
+        break;
+      case "Doctor":
+        redirect("/doctor-dashboard");
+        break;
+      case "Nurse":
+        redirect("/nurse-dashboard");
+        break;
+      case "Medical Records Officer":
+        redirect("/mro-dashboard");
+        break;
+      case "Medicine Inventory Handler":
+        redirect("/mih-dashboard");
+        break;
+      default:
+        console.log(`Unknown or missing role for user ${user.id}: ${role}`); // Optional: Log unexpected roles
+        redirect("/error");
+    }
+  }
 }
+
 
 export async function signup(formData: FormData) {
   const supabase = createClient();
