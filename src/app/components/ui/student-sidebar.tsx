@@ -1,19 +1,19 @@
 "use client";
-import { JSX, useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation"; 
-import { Menu, LayoutGrid, Activity, Users, Calendar, Clipboard, Stethoscope, Clock1 } from "lucide-react";
+import { JSX } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { Menu, LayoutGrid, Clipboard, Stethoscope, Clock1 } from "lucide-react";
+import { useState, useEffect } from "react";
 
-function SidebarItem({ icon, text, isOpen, route }: { icon: JSX.Element; text: string; isOpen: boolean; route: string }) {
+function SidebarItem({ icon, text, route }: { icon: JSX.Element; text: string; route: string }) {
   const router = useRouter();
   const pathname = usePathname();
-
   const isActive = pathname === route;
 
   return (
     <button
       onClick={() => router.push(route)}
       className={`flex items-center w-full p-3 rounded-md cursor-pointer transition-all
-        ${isOpen ? "justify-start space-x-4" : "justify-center"}
+        justify-start space-x-4
         ${
           isActive
             ? "bg-white text-[#009da2]"
@@ -21,57 +21,71 @@ function SidebarItem({ icon, text, isOpen, route }: { icon: JSX.Element; text: s
         }`}
     >
       <span className="text-[20px]">{icon}</span>
-      {isOpen && <span className="whitespace-nowrap">{text}</span>}
+      <span className="whitespace-nowrap">{text}</span>
     </button>
   );
 }
 
 export default function StudentSidebar() {
-  const [isOpen, setIsOpen] = useState<boolean | null>(null);
-  
-  useEffect(() => {
-    const savedState = localStorage.getItem("sidebar-open");
-    setIsOpen(savedState === null ? true : savedState === "true");
-  }, []);
-  
-  useEffect(() => {
-    if (isOpen !== null) {
-      localStorage.setItem("sidebar-open", isOpen.toString());
-    }
-  }, [isOpen]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [canShowButton, setCanShowButton] = useState(true); // New state
 
-  if (isOpen === null) {
-    return null; 
-  }
+  useEffect(() => {
+    // When sidebar starts closing, hide the button immediately
+    if (!isSidebarOpen) {
+      setCanShowButton(false);
+      // Introduce a delay after the closing transition to allow the button to reappear
+      const timer = setTimeout(() => {
+        setCanShowButton(true);
+      }, 300); // Adjust this delay to match your sidebar's transition duration
+
+      return () => clearTimeout(timer); // Cleanup the timer if the component unmounts
+    } else {
+      setCanShowButton(true); // Show button when sidebar is open (for initial state or reopening)
+    }
+  }, [isSidebarOpen]);
 
   return (
-    <div className="flex">
-      {/* Sidebar Container */}
-      <div
-        className={`fixed left-0 top-16 bg-[#ffebea] p-5 transition-all duration-300 ${
-          isOpen ? "w-64 p-5" : "w-16 p-3"
-        } h-[calc(100vh-4rem)]`}
-      >
-        {/* Menu Button */}
-        <button
-          className="mb-6 text-gray-600 focus:outline-none cursor-pointer"
-          onClick={() => setIsOpen((prev) => !prev)}
-        >
-          <Menu size={28} />
-        </button>
+    <div className="flex relative">
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed top-0 left-0 w-full h-full bg-black opacity-50 z-30 transition-opacity duration-300 md:hidden"
+        ></div>
+      )}
 
+      {/* for small screens */}
+      {!isSidebarOpen && canShowButton && (
+        <button
+          onClick={() => setIsSidebarOpen(true)}
+          className="fixed top-16 left-4 bg-white p-2 mt-4 rounded-md z-50 md:hidden"
+        >
+          <Menu className="h-6 w-6 text-gray-700" />
+        </button>
+      )}
+
+      <div
+        className={`fixed left-0 bg-[#ffebea] border-t-1 border-t-gray-200 p-5 w-64 transition-transform duration-300 z-40
+          ${
+            isSidebarOpen
+              ? "translate-x-0 shadow-lg h-screen top-0"
+              : "-translate-x-full h-full top-16 md:h-[calc(100vh-4rem)]"
+          }
+          md:translate-x-0 md:top-16 md:h-[calc(100vh-4rem)] md:block
+        `}
+      >
         {/* Sidebar Items */}
-        <nav className="space-y-6">
-          <SidebarItem icon={<LayoutGrid />} text="Dashboard" isOpen={isOpen} route="/student-dashboard" />
-          <SidebarItem icon={<Clipboard />} text="My Medical Record" isOpen={isOpen} route="/student-record" />
-          <SidebarItem icon={<Stethoscope />} text="Medical Consultation" isOpen={isOpen} route="/consultation-request" />
-          <SidebarItem icon={<Clock1 />} text="History" isOpen={isOpen} route="/student-history" />
+        <nav className="space-y-2">
+          <SidebarItem icon={<LayoutGrid />} text="Dashboard" route="/student-dashboard" />
+          <SidebarItem icon={<Clipboard />} text="My Medical Record" route="/student-record" />
+          <SidebarItem icon={<Stethoscope />} text="Request Consultation" route="/consultation-request" />
+          <SidebarItem icon={<Clock1 />} text="My History" route="/student-history" />
         </nav>
       </div>
- 
-      <div className={`flex-1 p-6 transition-all ${isOpen ? "ml-50" : "ml-2"}`}>
+
+      <div className={`flex-1 p-6 ${isSidebarOpen ? "ml-0" : "md:ml-53"}`}>
+        {/* Main Content Area */}
       </div>
     </div>
   );
 }
-
