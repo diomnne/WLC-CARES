@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 export type User = {
   id: string;
@@ -30,13 +30,16 @@ export type User = {
 const columns: ColumnDef<User>[] = [
   {
     accessorKey: "avatar_url",
-    header: "Avatar",
+    header: "",
     cell: ({ row }) => (
       <Avatar className="h-8 w-8">
         <AvatarImage
           src={row.original.avatar_url || ""}
           alt={row.original.full_name}
         />
+        <AvatarFallback>
+          {row.original.full_name?.[0]?.toUpperCase() || "U"}
+        </AvatarFallback>
       </Avatar>
     ),
   },
@@ -78,43 +81,45 @@ export function UserTable({ data }: { data: User[] }) {
   });
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader className="bg-gray-100 text-gray-800">
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
-                  {flexRender(
-                    header.column.columnDef.header,
-                    header.getContext()
-                  )}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
+    <div className="w-full">
+      <div className="rounded-md border w-full overflow-x-auto">
+        <Table>
+          <TableHeader className="bg-gray-100 text-gray-800">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id} className="whitespace-nowrap">
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                  </TableHead>
                 ))}
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={columns.length} className="text-center">
-                No users found.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-      <div className="flex justify-end mt-2 space-x-2">
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="whitespace-normal break-words">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="text-center">
+                  No users found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="flex justify-end mt-4 space-x-2">
         <Button
           variant="outline"
           size="sm"
