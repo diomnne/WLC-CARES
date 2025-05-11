@@ -81,7 +81,7 @@ export default function AdminSidebar() {
           <SidebarItem icon={<Activity />} text="User Activity" route="/activity" />
           <SidebarItem icon={<Users />} text="Manage Users" route="/manage-users" />
           <SidebarItem icon={<Calendar />} text="Consultations" route="/consultation-schedules" />
-          <SidebarItem icon={<Clipboard />} text="Medical Records" route="/medical-records" />
+          <SidebarItem icon={<Clipboard />} text="Health Records" route="/a-health-records" />
           <SidebarItem icon={<Pill />} text="Medicine Inventory" route="/medicine-inventory" />
         </nav>
       </div>
