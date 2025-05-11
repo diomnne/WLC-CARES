@@ -1,6 +1,6 @@
 "use client";
 
-import Sidebar from "@/app/components/ui/admin-sidebar";
+import Sidebar from "@/app/components/sidebars/admin-sidebar";
 
 const MedicalRecords = () => {
   return (

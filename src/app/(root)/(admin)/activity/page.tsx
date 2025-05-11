@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import Sidebar from "@/app/components/ui/admin-sidebar";
+import Sidebar from "@/app/components/sidebars/admin-sidebar";
 import { Search } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 

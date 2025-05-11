@@ -1,5 +1,5 @@
 "use client";
-import Sidebar from "@/app/components/ui/doctor-sidebar";
+import Sidebar from "@/app/components/sidebars/doctor-sidebar";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 
@@ -23,7 +23,7 @@ const MedicalRecords = () => {
             <Button
               variant="outline"
               className="mb-4"
-              onClick={() => router.push("/d-health-record-form")}>
+              onClick={() => router.push("/d-new-health-record")}>
               Add New Health Record
             </Button>
           </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Sidebar from "@/app/components/ui/admin-sidebar"
+import Sidebar from "@/app/components/sidebars/admin-sidebar"
 import { createClient } from "@/utils/supabase/client"
 import { UserTable, User } from "@/app/components/ui/users-table"
 

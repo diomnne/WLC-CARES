@@ -1,5 +1,5 @@
 "use client";
-import Sidebar from "@/app/components/ui/student-sidebar";
+import Sidebar from "@/app/components/sidebars/student-sidebar";
 
 const StudentDashboard = () => {
   return (
