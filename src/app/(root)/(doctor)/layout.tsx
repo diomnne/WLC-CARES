@@ -1,8 +1,7 @@
 import { ReactNode } from "react";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-//import Sidebar from "@/app/components/ui/doctor-sidebar";
-
+import Sidebar from "@/app/components/ui/doctor-sidebar";
 const REQUIRED_ROLE = "Doctor";
 
 async function getUserAndProfile() {
@@ -56,7 +55,7 @@ export default async function DoctorLayout({ children }: { children: ReactNode }
 
   return (
     <div className="">
-      {/* <Sidebar /> */}
+      <Sidebar />
       <main className="">
         {children}
       </main>
