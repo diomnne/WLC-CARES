@@ -1,8 +1,7 @@
 "use client";
+import Sidebar from "@/app/components/sidebars/doctor-sidebar";
 
-import Sidebar from "@/app/components/ui/doctor-sidebar";
-
-const HealthRecordForm = () => {
+const NewHealthRecord = () => {
   return (
     <div className="flex flex-col h-screen">
       {/* Navbar */}
@@ -22,4 +21,4 @@ const HealthRecordForm = () => {
   );
 };
 
-export default HealthRecordForm;
+export default NewHealthRecord;

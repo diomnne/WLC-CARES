@@ -1,5 +1,5 @@
 "use client";
-import Sidebar from "@/app/components/ui/doctor-sidebar";
+import Sidebar from "@/app/components/sidebars/doctor-sidebar";
 
 const DoctorDashboard = () => {
   return (

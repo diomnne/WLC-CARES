@@ -1,6 +1,6 @@
 "use client"
 
-import Sidebar from "@/app/components/ui/admin-sidebar"
+import Sidebar from "@/app/components/sidebars/admin-sidebar"
 import { createClient } from "@/utils/supabase/client"
 import { Users, IdCard, BriefcaseMedical, Inbox } from "lucide-react"
 import { useEffect, useState } from "react"

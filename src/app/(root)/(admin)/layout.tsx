@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import Sidebar from "@/app/components/ui/admin-sidebar";
+import Sidebar from "@/app/components/sidebars/admin-sidebar";
 
 const REQUIRED_ROLE = "Admin";
 
