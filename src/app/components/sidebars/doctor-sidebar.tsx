@@ -80,7 +80,7 @@ export default function DoctorSidebar() {
           <SidebarItem icon={<LayoutGrid />} text="Dashboard" route="/doctor-dashboard" />
           <SidebarItem icon={<Calendar />} text="Consultations" route="/consultation-schedules" />
           <SidebarItem icon={<Clipboard />} text="Health Records" route="/d-health-records" />
-          <SidebarItem icon={<FilePlus />} text="New Health Record" route="/d-health-record-form" />
+          <SidebarItem icon={<FilePlus />} text="New Health Record" route="/d-new-health-record" />
           <SidebarItem icon={<Pill />} text="Medicine Inventory" route="/medicine-inventory" />
         </nav>
       </div>
