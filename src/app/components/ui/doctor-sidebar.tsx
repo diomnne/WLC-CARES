@@ -1,7 +1,7 @@
 "use client";
 import { JSX } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Menu, LayoutGrid, Activity, Users, Calendar, Clipboard, Pill } from "lucide-react";
+import { Menu, LayoutGrid, Activity, Users, Calendar, Clipboard, Pill, FilePlus } from "lucide-react";
 import { useState, useEffect } from "react";
 
 function SidebarItem({ icon, text, route }: { icon: JSX.Element; text: string; route: string }) {
@@ -79,7 +79,8 @@ export default function DoctorSidebar() {
           <div className="pt-20 md:pt-0"></div>
           <SidebarItem icon={<LayoutGrid />} text="Dashboard" route="/doctor-dashboard" />
           <SidebarItem icon={<Calendar />} text="Consultations" route="/consultation-schedules" />
-          <SidebarItem icon={<Clipboard />} text="Medical Records" route="/medical-records" />
+          <SidebarItem icon={<Clipboard />} text="Health Records" route="/d-health-records" />
+          <SidebarItem icon={<FilePlus />} text="New Health Record" route="/d-health-record-form" />
           <SidebarItem icon={<Pill />} text="Medicine Inventory" route="/medicine-inventory" />
         </nav>
       </div>
