@@ -78,9 +78,8 @@ export default function StudentSidebar() {
         <nav className="space-y-2">
           <div className="pt-20 md:pt-0"></div>
           <SidebarItem icon={<LayoutGrid />} text="Dashboard" route="/student-dashboard" />
-          <SidebarItem icon={<Clipboard />} text="My Medical Record" route="/student-record" />
+          <SidebarItem icon={<Clipboard />} text="My Health Record" route="/student-record" />
           <SidebarItem icon={<Stethoscope />} text="Request Consultation" route="/consultation-request" />
-          <SidebarItem icon={<Clock1 />} text="My History" route="/student-history" />
         </nav>
       </div>
 
