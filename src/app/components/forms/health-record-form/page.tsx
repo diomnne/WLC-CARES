@@ -13,12 +13,12 @@ import {
   FormLabel,
   FormDescription,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
+} from "@/components/ui/form"; // Assuming path is correct
+import { Input } from "@/components/ui/input"; // Assuming path is correct
+import { Button } from "@/components/ui/button"; // Assuming path is correct
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"; // Assuming path is correct
+import { Textarea } from "@/components/ui/textarea"; // Assuming path is correct
+import { cn } from "@/lib/utils"; // Assuming path is correct
 import {
   Command,
   CommandEmpty,
@@ -26,33 +26,61 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command";
+} from "@/components/ui/command"; // Assuming path is correct
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@/components/ui/popover"; // Assuming path is correct
 import { Check, ChevronsUpDown } from "lucide-react";
 
 const formSchema = z.object({
   student_name: z.string().min(1, "Student name is required."),
-  roll_number: z.string().min(1, "Roll number is required."), // Added roll_number
-  date_of_birth: z.coerce.date(),
+  roll_number: z.string().min(1, "Roll number is required."),
+  date_of_birth: z.coerce.date().nullable().optional(), // Allow null/undefined for initial state
   sex: z.string().min(1, "Sex is required."),
   home_address: z.string().min(1, "Home address is required."),
   student_contact: z.string().min(1, "Student contact is required."),
-  
+
   academic_level: z.string({ required_error: "Academic level is required." }).min(1, "Academic level is required."),
   year_level: z.string().optional(),
   academic_program: z.string().optional(),
-  
+
   father_name: z.string().min(1, "Father's name is required."),
   father_contact: z.string().optional(),
   father_email: z.string().email("Invalid email address.").min(1, "Father's email is required."),
   mother_name: z.string().min(1, "Mother's name is required."),
   mother_contact: z.string().optional(),
   mother_email: z.string().email("Invalid email address.").min(1, "Mother's email is required."),
+  
+  // Moved allergies to be more prominent within medical info
   allergies: z.string().optional(),
+
+  // Explicit Immunization Fields
+  immunization_bcg_date: z.coerce.date().optional().nullable(),
+  immunization_dpt_dose1_date: z.coerce.date().optional().nullable(),
+  immunization_dpt_dose2_date: z.coerce.date().optional().nullable(),
+  immunization_dpt_dose3_date: z.coerce.date().optional().nullable(),
+  immunization_dpt_booster1_date: z.coerce.date().optional().nullable(),
+  immunization_dpt_booster2_date: z.coerce.date().optional().nullable(),
+  immunization_dpt_booster3_date: z.coerce.date().optional().nullable(),
+  immunization_ppd_lower_left_date: z.coerce.date().optional().nullable(), // PPD from bottom left of image
+  immunization_ppd_top_middle_date: z.coerce.date().optional().nullable(), // PPD from top middle of image
+  immunization_opv_dose1_date: z.coerce.date().optional().nullable(), // Oral Polio
+  immunization_opv_dose2_date: z.coerce.date().optional().nullable(),
+  immunization_opv_dose3_date: z.coerce.date().optional().nullable(),
+  immunization_opv_booster1_date: z.coerce.date().optional().nullable(),
+  immunization_opv_booster2_date: z.coerce.date().optional().nullable(),
+  immunization_opv_booster3_date: z.coerce.date().optional().nullable(),
+  immunization_mmr_date: z.coerce.date().optional().nullable(),
+  immunization_measles_date: z.coerce.date().optional().nullable(),
+  immunization_mumps_date: z.coerce.date().optional().nullable(),
+  immunization_german_measles_date: z.coerce.date().optional().nullable(),
+  immunization_cholera_date: z.coerce.date().optional().nullable(),
+  immunization_typhoid_date: z.coerce.date().optional().nullable(),
+  immunization_hepaB_dose1_date: z.coerce.date().optional().nullable(),
+  immunization_hepaB_dose2_date: z.coerce.date().optional().nullable(),
+  immunization_hepaB_dose3_date: z.coerce.date().optional().nullable(),
 });
 
 const academicLevels = [
@@ -128,9 +156,9 @@ export default function HealthRecordForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       student_name: "",
-      roll_number: "", // Added roll_number
-      date_of_birth: new Date(),
-      sex: undefined, 
+      roll_number: "",
+      date_of_birth: undefined, // Or null
+      sex: undefined,
       home_address: "",
       student_contact: "",
       academic_level: "",
@@ -142,7 +170,33 @@ export default function HealthRecordForm() {
       mother_name: "",
       mother_contact: "",
       mother_email: "",
-      allergies: "",
+      allergies: "", // Initialize allergies
+
+      // Explicitly initialize immunization fields
+      immunization_bcg_date: null,
+      immunization_dpt_dose1_date: null,
+      immunization_dpt_dose2_date: null,
+      immunization_dpt_dose3_date: null,
+      immunization_dpt_booster1_date: null,
+      immunization_dpt_booster2_date: null,
+      immunization_dpt_booster3_date: null,
+      immunization_ppd_lower_left_date: null,
+      immunization_ppd_top_middle_date: null,
+      immunization_opv_dose1_date: null,
+      immunization_opv_dose2_date: null,
+      immunization_opv_dose3_date: null,
+      immunization_opv_booster1_date: null,
+      immunization_opv_booster2_date: null,
+      immunization_opv_booster3_date: null,
+      immunization_mmr_date: null,
+      immunization_measles_date: null,
+      immunization_mumps_date: null,
+      immunization_german_measles_date: null,
+      immunization_cholera_date: null,
+      immunization_typhoid_date: null,
+      immunization_hepaB_dose1_date: null,
+      immunization_hepaB_dose2_date: null,
+      immunization_hepaB_dose3_date: null,
     },
   });
 
@@ -152,12 +206,35 @@ export default function HealthRecordForm() {
     try {
       console.log(values);
       toast.success("Form submitted successfully!");
-      form.reset(); 
+      form.reset();
     } catch (error) {
       console.error("Form submission error", error);
       toast.error("Failed to submit the form.");
     }
   };
+
+  // Helper function for date field rendering
+  const renderDateField = (name: keyof z.infer<typeof formSchema>, label: string) => (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>{label}</FormLabel>
+          <FormControl>
+            <Input
+              type="date"
+              className="w-full"
+              value={field.value instanceof Date ? format(new Date(field.value), "yyyy-MM-dd") : ""}
+              onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
+            />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+
 
   return (
     <Form {...form}>
@@ -165,7 +242,7 @@ export default function HealthRecordForm() {
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-8 max-w-4xl mx-auto py-3"
       >
-        <h3 className="text-lg font-semibold text-gray-800">Personal Information</h3>
+        <h3 className="text-lg font-bold text-gray-800">Personal Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <FormField
             control={form.control}
@@ -193,7 +270,7 @@ export default function HealthRecordForm() {
                   <Input
                     type="date"
                     className="w-full"
-                    value={field.value ? format(new Date(field.value), "yyyy-MM-dd") : ""}
+                    value={field.value instanceof Date ? format(new Date(field.value), "yyyy-MM-dd") : ""}
                     onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
                   />
                 </FormControl>
@@ -210,14 +287,14 @@ export default function HealthRecordForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Sex</FormLabel>
-                <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-col gap-2 pt-2"> 
+                <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-col gap-2 pt-2">
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="male" id="male" />
-                    <FormLabel htmlFor="male" className="font-normal">Male</FormLabel> 
+                    <FormLabel htmlFor="male" className="font-normal">Male</FormLabel>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="female" id="female" />
-                    <FormLabel htmlFor="female" className="font-normal">Female</FormLabel> 
+                    <FormLabel htmlFor="female" className="font-normal">Female</FormLabel>
                   </div>
                 </RadioGroup>
                 <FormDescription>
@@ -248,7 +325,7 @@ export default function HealthRecordForm() {
             name="roll_number"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Roll Number / Student ID</FormLabel> 
+                <FormLabel>Roll Number / Student ID</FormLabel>
                 <FormControl>
                   <Input type="text" placeholder="e.g., 0123" {...field} />
                 </FormControl>
@@ -268,7 +345,7 @@ export default function HealthRecordForm() {
                 <FormControl>
                   <Input type="tel" placeholder="09XXXXXXXXX" {...field} />
                 </FormControl>
-                 <FormDescription>
+                <FormDescription>
                   Student's mobile number.
                 </FormDescription>
                 <FormMessage />
@@ -278,7 +355,7 @@ export default function HealthRecordForm() {
         </div>
 
         {/* Academic Information Section */}
-        <h3 className="text-lg font-semibold text-gray-800 pt-4">Academic Information</h3>
+        <h3 className="text-lg font-bold text-gray-800 pt-4">Academic Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <FormField
             control={form.control}
@@ -293,20 +370,20 @@ export default function HealthRecordForm() {
                         variant="outline"
                         role="combobox"
                         className={cn(
-                          "w-full justify-between", 
+                          "w-full justify-between",
                           !field.value && "text-muted-foreground"
                         )}
                       >
                         {field.value
                           ? academicLevels.find(
-                              (level) => level.value === field.value
-                            )?.label
+                            (level) => level.value === field.value
+                          )?.label
                           : "Select academic level"}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0"> 
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                     <Command>
                       <CommandInput placeholder="Search academic level..." />
                       <CommandList>
@@ -318,8 +395,8 @@ export default function HealthRecordForm() {
                               key={level.value}
                               onSelect={() => {
                                 form.setValue("academic_level", level.value);
-                                form.setValue("year_level", ""); 
-                                form.setValue("academic_program", ""); 
+                                form.setValue("year_level", "");
+                                form.setValue("academic_program", "");
                               }}
                             >
                               <Check
@@ -356,20 +433,20 @@ export default function HealthRecordForm() {
                         role="combobox"
                         disabled={!watchedAcademicLevel || !(yearLevelsByAcademicLevel[watchedAcademicLevel]?.length > 0)}
                         className={cn(
-                          "w-full justify-between", 
+                          "w-full justify-between",
                           !field.value && "text-muted-foreground"
                         )}
                       >
                         {field.value
                           ? (yearLevelsByAcademicLevel[watchedAcademicLevel] || []).find(
-                              (year) => year.value === field.value
-                            )?.label
+                            (year) => year.value === field.value
+                          )?.label
                           : "Select year level"}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0"> 
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                     <Command>
                       <CommandInput placeholder="Search year level..." />
                       <CommandList>
@@ -423,8 +500,8 @@ export default function HealthRecordForm() {
                       >
                         {field.value
                           ? (academicProgramsByAcademicLevel[watchedAcademicLevel] || []).find(
-                              (program) => program.value === field.value
-                            )?.label
+                            (program) => program.value === field.value
+                          )?.label
                           : "Select academic program"}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
@@ -470,7 +547,7 @@ export default function HealthRecordForm() {
         </div>
 
 
-        <h3 className="text-lg font-semibold text-gray-800 pt-4">Parent/Guardian Information</h3>
+        <h3 className="text-lg font-bold text-gray-800 pt-4">Parent/Guardian Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <FormField
             control={form.control}
@@ -479,7 +556,7 @@ export default function HealthRecordForm() {
               <FormItem>
                 <FormLabel>Father's Name</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input placeholder="Father's Full Name" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -520,7 +597,7 @@ export default function HealthRecordForm() {
               <FormItem>
                 <FormLabel>Mother's Name</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input placeholder="Mother's Full Name" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -553,6 +630,10 @@ export default function HealthRecordForm() {
             )}
           />
         </div>
+
+        {/* Medical Information Section */}
+        <h3 className="text-lg font-bold text-gray-800 pt-4">Medical Information</h3>
+        
         <FormField
           control={form.control}
           name="allergies"
@@ -563,13 +644,58 @@ export default function HealthRecordForm() {
                 <Textarea placeholder="E.g., penicillin, peanuts. If none, indicate 'None'." {...field} />
               </FormControl>
               <FormDescription>
-                List of allergies (comma-separated), if any. If none, please indicate "None".
+                Comma-separated list of allergies, if any. If none, please indicate "None".
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-        <div className="flex justify-end">
+
+        {/* Immunization Record Sub-Section */}
+        <h4 className="text-md font-semibold text-gray-700 pt-2">Immunization Record</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-6">
+          {/* Row 1 */}
+          {renderDateField("immunization_bcg_date", "BCG")}
+          {renderDateField("immunization_ppd_top_middle_date", "PPD")}
+          {renderDateField("immunization_measles_date", "Measles")}
+          
+          {/* Row 2 */}
+          {renderDateField("immunization_dpt_dose1_date", "DPT - Dose 1")}
+          {renderDateField("immunization_dpt_dose2_date", "DPT - Dose 2")}
+          {renderDateField("immunization_dpt_dose3_date", "DPT - Dose 3")}
+
+          {/* Row 3 */}
+          {renderDateField("immunization_dpt_booster1_date", "DPT - Booster 1")}
+          {renderDateField("immunization_dpt_booster2_date", "DPT - Booster 2")}
+          {renderDateField("immunization_dpt_booster3_date", "DPT - Booster 3")}
+
+          {/* Row 4 */}
+          {renderDateField("immunization_opv_dose1_date", "Oral Polio - Dose 1")}
+          {renderDateField("immunization_opv_dose2_date", "Oral Polio - Dose 2")}
+          {renderDateField("immunization_opv_dose3_date", "Oral Polio - Dose 3")}
+          
+          {/* Row 5 */}
+          {renderDateField("immunization_opv_booster1_date", "Oral Polio - Booster 1")}
+          {renderDateField("immunization_opv_booster2_date", "Oral Polio - Booster 2")}
+          {renderDateField("immunization_opv_booster3_date", "Oral Polio - Booster 3")}
+
+          {/* Row 6 */}
+          {renderDateField("immunization_mumps_date", "Mumps")}
+          {renderDateField("immunization_german_measles_date", "German Measles")}
+          {renderDateField("immunization_cholera_date", "Cholera")}
+
+          {/* Row 7 */}
+          {renderDateField("immunization_hepaB_dose1_date", "Hepa B - Dose 1")}
+          {renderDateField("immunization_hepaB_dose2_date", "Hepa B - Dose 2")}
+          {renderDateField("immunization_hepaB_dose3_date", "Hepa B - Dose 3")}
+
+          {/* Row 8 */}
+          {renderDateField("immunization_ppd_lower_left_date", "PPD")} 
+          {renderDateField("immunization_typhoid_date", "Typhoid")}
+          {renderDateField("immunization_mmr_date", "MMR")}
+        </div>
+
+        <div className="flex justify-end pt-4">
           <Button type="submit">Submit</Button>
         </div>
       </form>
