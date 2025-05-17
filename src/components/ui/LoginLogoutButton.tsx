@@ -1,16 +1,8 @@
-// components/LoginButton.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { signout } from "@/lib/auth-actions";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
@@ -41,32 +33,22 @@ const LoginButton = () => {
     };
   }, []);
 
-  const handleLogout = async () => {
-    await signout();
-    router.refresh(); // Refresh UI state after logout
+  // Navigate to profile page
+  const handleProfileNavigation = () => {
+    router.push("/profile");
   };
 
   if (user) {
     return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Avatar className="cursor-pointer">
-            <AvatarImage
-              src={user.user_metadata?.avatar_url || "/default-avatar.png"}
-              alt="Profile"
-            />
-            <AvatarFallback>
-              {user.user_metadata?.full_name?.[0] ?? "U"}
-            </AvatarFallback>
-          </Avatar>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem className="cursor-pointer" onClick={() => router.push("/profile")}>
-            Profile
-          </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer" onClick={handleLogout}>Log out</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Avatar className="cursor-pointer" onClick={handleProfileNavigation}>
+        <AvatarImage
+          src={user.user_metadata?.avatar_url || "/default-avatar.png"}
+          alt="Profile"
+        />
+        <AvatarFallback>
+          {user.user_metadata?.full_name?.[0] ?? "U"}
+        </AvatarFallback>
+      </Avatar>
     );
   }
 
