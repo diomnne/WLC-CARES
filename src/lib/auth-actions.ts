@@ -56,14 +56,11 @@ export async function login(formData: FormData) {
       case "Nurse":
         redirect("/nurse-dashboard");
         break;
-      case "Medical Records Officer":
-        redirect("/mro-dashboard");
-        break;
-      case "Medicine Inventory Handler":
-        redirect("/mih-dashboard");
+      case "Secretary":
+        redirect("/secretary-dashboard");
         break;
       default:
-        console.log(`Unknown or missing role for user ${user.id}: ${role}`); // Optional: Log unexpected roles
+        console.log(`Unknown or missing role for user ${user.id}: ${role}`);
         redirect("/error");
     }
   }
@@ -133,4 +130,17 @@ export async function signInWithGoogle() {
   }
 
   redirect(data.url);
+}
+
+export async function resetPassword(email: string) {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email);
+
+  if (error) {
+    console.log(error);
+    return { error: error.message };
+  }
+
+  return { data };
 }
