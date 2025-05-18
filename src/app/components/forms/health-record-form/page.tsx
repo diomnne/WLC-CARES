@@ -1,5 +1,6 @@
 "use client";
 
+import React from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -13,12 +14,12 @@ import {
   FormLabel,
   FormDescription,
   FormMessage,
-} from "@/components/ui/form"; // Assuming path is correct
-import { Input } from "@/components/ui/input"; // Assuming path is correct
-import { Button } from "@/components/ui/button"; // Assuming path is correct
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"; // Assuming path is correct
-import { Textarea } from "@/components/ui/textarea"; // Assuming path is correct
-import { cn } from "@/lib/utils"; // Assuming path is correct
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import {
   Command,
   CommandEmpty,
@@ -26,18 +27,40 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command"; // Assuming path is correct
+} from "@/components/ui/command";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"; // Assuming path is correct
+} from "@/components/ui/popover";
 import { Check, ChevronsUpDown } from "lucide-react";
+// Import the Checkbox component
+import { Checkbox } from "@/components/ui/checkbox";
+
+
+// Define the possible medical history options based on the image
+const medicalHistoryOptions = [
+  { label: "Measles", value: "Measles" },
+  { label: "Mumps", value: "Mumps" },
+  { label: "German Measles", value: "German Measles" },
+  { label: "Chicken Pox", value: "Chicken Pox" },
+  { label: "Hepatitis", value: "Hepatitis" },
+  { label: "Allergies", value: "Allergies" },
+  { label: "Bronchial Asthma", value: "Bronchial Asthma" },
+  { label: "Heart Disorder", value: "Heart Disorder" },
+  { label: "Kidney Disorder", value: "Kidney Disorder" },
+  { label: "Convulsions", value: "Convulsions" },
+  { label: "Epilepsy", value: "Epilepsy" },
+  { label: "Psychoneurosis", value: "Psychoneurosis" },
+  { label: "Bleeding Tendency", value: "Bleeding Tendency" },
+  { label: "Others", value: "Others" },
+];
+
 
 const formSchema = z.object({
   student_name: z.string().min(1, "Student name is required."),
   roll_number: z.string().min(1, "Roll number is required."),
-  date_of_birth: z.coerce.date().nullable().optional(), // Allow null/undefined for initial state
+  date_of_birth: z.coerce.date().nullable().optional(),
   sex: z.string().min(1, "Sex is required."),
   home_address: z.string().min(1, "Home address is required."),
   student_contact: z.string().min(1, "Student contact is required."),
@@ -52,35 +75,12 @@ const formSchema = z.object({
   mother_name: z.string().min(1, "Mother's name is required."),
   mother_contact: z.string().optional(),
   mother_email: z.string().email("Invalid email address.").min(1, "Mother's email is required."),
-  
-  // Moved allergies to be more prominent within medical info
+
   allergies: z.string().optional(),
 
-  // Explicit Immunization Fields
-  immunization_bcg_date: z.coerce.date().optional().nullable(),
-  immunization_dpt_dose1_date: z.coerce.date().optional().nullable(),
-  immunization_dpt_dose2_date: z.coerce.date().optional().nullable(),
-  immunization_dpt_dose3_date: z.coerce.date().optional().nullable(),
-  immunization_dpt_booster1_date: z.coerce.date().optional().nullable(),
-  immunization_dpt_booster2_date: z.coerce.date().optional().nullable(),
-  immunization_dpt_booster3_date: z.coerce.date().optional().nullable(),
-  immunization_ppd_lower_left_date: z.coerce.date().optional().nullable(), // PPD from bottom left of image
-  immunization_ppd_top_middle_date: z.coerce.date().optional().nullable(), // PPD from top middle of image
-  immunization_opv_dose1_date: z.coerce.date().optional().nullable(), // Oral Polio
-  immunization_opv_dose2_date: z.coerce.date().optional().nullable(),
-  immunization_opv_dose3_date: z.coerce.date().optional().nullable(),
-  immunization_opv_booster1_date: z.coerce.date().optional().nullable(),
-  immunization_opv_booster2_date: z.coerce.date().optional().nullable(),
-  immunization_opv_booster3_date: z.coerce.date().optional().nullable(),
-  immunization_mmr_date: z.coerce.date().optional().nullable(),
-  immunization_measles_date: z.coerce.date().optional().nullable(),
-  immunization_mumps_date: z.coerce.date().optional().nullable(),
-  immunization_german_measles_date: z.coerce.date().optional().nullable(),
-  immunization_cholera_date: z.coerce.date().optional().nullable(),
-  immunization_typhoid_date: z.coerce.date().optional().nullable(),
-  immunization_hepaB_dose1_date: z.coerce.date().optional().nullable(),
-  immunization_hepaB_dose2_date: z.coerce.date().optional().nullable(),
-  immunization_hepaB_dose3_date: z.coerce.date().optional().nullable(),
+  // Field for Past Medical History (array of strings)
+  past_medical_history: z.array(z.string()).optional(),
+  
 });
 
 const academicLevels = [
@@ -145,8 +145,8 @@ const academicProgramsByAcademicLevel: Record<string, { label: string; value: st
     { label: "COAB - BSAIS", value: "COAB - BSAIS" },
     { label: "COAB - BSBA (Major in Financial Management)", value: "COAB - BSBA (Major in Financial Management)" },
     { label: "COAB - BSBA (Major in Human Resource Management)", value: "COAB - BSBA (Major in Human Resource Management)" },
-    { label: "COAB - BSEntrep", value: "COAB - BSEntrep" },
-    { label: "CHM - BSHM", value: "CHM - BSHM" },
+    { label: "COAB - BSEntrep", value: "BSEntrep" },
+    { label: "CHM - BSHM", value: "BSHM" },
   ],
 };
 
@@ -157,7 +157,7 @@ export default function HealthRecordForm() {
     defaultValues: {
       student_name: "",
       roll_number: "",
-      date_of_birth: undefined, // Or null
+      date_of_birth: undefined,
       sex: undefined,
       home_address: "",
       student_contact: "",
@@ -170,33 +170,9 @@ export default function HealthRecordForm() {
       mother_name: "",
       mother_contact: "",
       mother_email: "",
-      allergies: "", // Initialize allergies
-
-      // Explicitly initialize immunization fields
-      immunization_bcg_date: null,
-      immunization_dpt_dose1_date: null,
-      immunization_dpt_dose2_date: null,
-      immunization_dpt_dose3_date: null,
-      immunization_dpt_booster1_date: null,
-      immunization_dpt_booster2_date: null,
-      immunization_dpt_booster3_date: null,
-      immunization_ppd_lower_left_date: null,
-      immunization_ppd_top_middle_date: null,
-      immunization_opv_dose1_date: null,
-      immunization_opv_dose2_date: null,
-      immunization_opv_dose3_date: null,
-      immunization_opv_booster1_date: null,
-      immunization_opv_booster2_date: null,
-      immunization_opv_booster3_date: null,
-      immunization_mmr_date: null,
-      immunization_measles_date: null,
-      immunization_mumps_date: null,
-      immunization_german_measles_date: null,
-      immunization_cholera_date: null,
-      immunization_typhoid_date: null,
-      immunization_hepaB_dose1_date: null,
-      immunization_hepaB_dose2_date: null,
-      immunization_hepaB_dose3_date: null,
+      allergies: "",
+      // Initialize past_medical_history as an empty array
+      past_medical_history: [],
     },
   });
 
@@ -213,28 +189,6 @@ export default function HealthRecordForm() {
     }
   };
 
-  // Helper function for date field rendering
-  const renderDateField = (name: keyof z.infer<typeof formSchema>, label: string) => (
-    <FormField
-      control={form.control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>{label}</FormLabel>
-          <FormControl>
-            <Input
-              type="date"
-              className="w-full"
-              value={field.value instanceof Date ? format(new Date(field.value), "yyyy-MM-dd") : ""}
-              onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  );
-
 
   return (
     <Form {...form}>
@@ -242,6 +196,7 @@ export default function HealthRecordForm() {
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-8 max-w-4xl mx-auto py-3"
       >
+        {/* Personal Information Section */}
         <h3 className="text-lg font-bold text-gray-800">Personal Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <FormField
@@ -376,8 +331,8 @@ export default function HealthRecordForm() {
                       >
                         {field.value
                           ? academicLevels.find(
-                            (level) => level.value === field.value
-                          )?.label
+                              (level) => level.value === field.value
+                            )?.label
                           : "Select academic level"}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
@@ -439,8 +394,8 @@ export default function HealthRecordForm() {
                       >
                         {field.value
                           ? (yearLevelsByAcademicLevel[watchedAcademicLevel] || []).find(
-                            (year) => year.value === field.value
-                          )?.label
+                              (year) => year.value === field.value
+                            )?.label
                           : "Select year level"}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
@@ -500,8 +455,8 @@ export default function HealthRecordForm() {
                       >
                         {field.value
                           ? (academicProgramsByAcademicLevel[watchedAcademicLevel] || []).find(
-                            (program) => program.value === field.value
-                          )?.label
+                              (program) => program.value === field.value
+                            )?.label
                           : "Select academic program"}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
@@ -547,6 +502,7 @@ export default function HealthRecordForm() {
         </div>
 
 
+        {/* Parent/Guardian Information Section */}
         <h3 className="text-lg font-bold text-gray-800 pt-4">Parent/Guardian Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <FormField
@@ -633,7 +589,8 @@ export default function HealthRecordForm() {
 
         {/* Medical Information Section */}
         <h3 className="text-lg font-bold text-gray-800 pt-4">Medical Information</h3>
-        
+
+        {/* Allergies Textarea (kept as is, but now grouped under Medical Info) */}
         <FormField
           control={form.control}
           name="allergies"
@@ -651,49 +608,51 @@ export default function HealthRecordForm() {
           )}
         />
 
-        {/* Immunization Record Sub-Section */}
-        <h4 className="text-md font-semibold text-gray-700 pt-2">Immunization Record</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-6">
-          {/* Row 1 */}
-          {renderDateField("immunization_bcg_date", "BCG")}
-          {renderDateField("immunization_ppd_top_middle_date", "PPD")}
-          {renderDateField("immunization_measles_date", "Measles")}
-          
-          {/* Row 2 */}
-          {renderDateField("immunization_dpt_dose1_date", "DPT - Dose 1")}
-          {renderDateField("immunization_dpt_dose2_date", "DPT - Dose 2")}
-          {renderDateField("immunization_dpt_dose3_date", "DPT - Dose 3")}
+        {/* Past Medical History Checkboxes */}
+        <FormField
+          control={form.control}
+          name="past_medical_history"
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <FormLabel>Past Medical History: Check if the student has/had:</FormLabel>
+              {/* Added grid classes for 3 columns on medium and larger screens */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {medicalHistoryOptions.map((item) => (
+                  <FormField
+                    key={item.value}
+                    control={form.control}
+                    name="past_medical_history"
+                    render={({ field: checkboxField }) => {
+                      return (
+                        <FormItem key={item.value} className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={checkboxField.value?.includes(item.value)}
+                              onCheckedChange={(checked) => {
+                                return checked
+                                  ? checkboxField.onChange([...(checkboxField.value || []), item.value])
+                                  : checkboxField.onChange(
+                                      checkboxField.value?.filter(
+                                        (value) => value !== item.value
+                                      )
+                                    );
+                              }}
+                            />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            {item.label}
+                          </FormLabel>
+                        </FormItem>
+                      );
+                    }}
+                  />
+                ))}
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-          {/* Row 3 */}
-          {renderDateField("immunization_dpt_booster1_date", "DPT - Booster 1")}
-          {renderDateField("immunization_dpt_booster2_date", "DPT - Booster 2")}
-          {renderDateField("immunization_dpt_booster3_date", "DPT - Booster 3")}
-
-          {/* Row 4 */}
-          {renderDateField("immunization_opv_dose1_date", "Oral Polio - Dose 1")}
-          {renderDateField("immunization_opv_dose2_date", "Oral Polio - Dose 2")}
-          {renderDateField("immunization_opv_dose3_date", "Oral Polio - Dose 3")}
-          
-          {/* Row 5 */}
-          {renderDateField("immunization_opv_booster1_date", "Oral Polio - Booster 1")}
-          {renderDateField("immunization_opv_booster2_date", "Oral Polio - Booster 2")}
-          {renderDateField("immunization_opv_booster3_date", "Oral Polio - Booster 3")}
-
-          {/* Row 6 */}
-          {renderDateField("immunization_mumps_date", "Mumps")}
-          {renderDateField("immunization_german_measles_date", "German Measles")}
-          {renderDateField("immunization_cholera_date", "Cholera")}
-
-          {/* Row 7 */}
-          {renderDateField("immunization_hepaB_dose1_date", "Hepa B - Dose 1")}
-          {renderDateField("immunization_hepaB_dose2_date", "Hepa B - Dose 2")}
-          {renderDateField("immunization_hepaB_dose3_date", "Hepa B - Dose 3")}
-
-          {/* Row 8 */}
-          {renderDateField("immunization_ppd_lower_left_date", "PPD")} 
-          {renderDateField("immunization_typhoid_date", "Typhoid")}
-          {renderDateField("immunization_mmr_date", "MMR")}
-        </div>
 
         <div className="flex justify-end pt-4">
           <Button type="submit">Submit</Button>
