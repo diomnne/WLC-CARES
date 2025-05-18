@@ -45,7 +45,7 @@ function LogOutButton({ icon, text, onClick, isActive = false }: { icon: JSX.Ele
   );
 }
 
-export default function DoctorSidebar() {
+export default function NurseSidebar() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [canShowButton, setCanShowButton] = useState(true); 
 
@@ -96,10 +96,10 @@ export default function DoctorSidebar() {
         {/* Sidebar Items */}
         <nav className="space-y-2">
           <div className="pt-20 md:pt-0"></div>
-          <SidebarItem icon={<LayoutGrid />} text="Dashboard" route="/doctor-dashboard" />
+          <SidebarItem icon={<LayoutGrid />} text="Dashboard" route="/nurse-dashboard" />
           <SidebarItem icon={<Calendar />} text="Consultations" route="/consultation-schedules" />
           <SidebarItem icon={<Clipboard />} text="Health Records" route="/d-health-records" />
-          <SidebarItem icon={<FilePlus />} text="New Health Record" route="/d-new-health-record" />
+          <SidebarItem icon={<FilePlus />} text="New Health Record" route="/n-new-health-record" />\
           <div className="mt-10"></div>
           <LogOutButton icon={<LogOut />} text="Log Out" onClick={signout} />
         </nav>

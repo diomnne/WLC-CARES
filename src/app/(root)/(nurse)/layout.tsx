@@ -43,10 +43,8 @@ export default async function NurseLayout({ children }: { children: ReactNode })
         redirect("/student-dashboard?error=access_denied");
       case "Admin":
         redirect("/admin-dashboard?error=access_denied");
-      case "Medical Records Officer":
-        redirect("/mro-dashboard?error=access_denied");
-      case "Medicine Inventory Handler":
-        redirect("/mih-dashboard?error=access_denied");
+      case "Secretary":
+        redirect("/secretary-dashboard?error=access_denied");
       case "Doctor":
         redirect("/doctor-dashboard?error=access_denied");
       default:

@@ -1,7 +1,7 @@
 "use client";
-import Sidebar from "@/app/components/sidebars/nurse-sidebar"
+import Sidebar from "@/app/components/sidebars/secretary-sidebar"
 
-const NurseDashboard = () => {
+const SecretaryDashboard = () => {
   return (
     <div className="flex flex-col h-screen">
       
@@ -9,11 +9,11 @@ const NurseDashboard = () => {
         <Sidebar />
 
         <main className="flex-1 p-6">
-          <h1 className="text-xl font-bold pt-4">Nurse Dashboard</h1>
+          <h1 className="text-xl font-bold pt-4">Secretary Dashboard</h1>
         </main>
       </div>
     </div>
   );
 };
 
-export default NurseDashboard;
+export default SecretaryDashboard;

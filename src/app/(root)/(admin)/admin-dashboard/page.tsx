@@ -25,8 +25,7 @@ const AdminDashboard = () => {
       const clinicStaffRoles = [
         "Doctor",
         "Nurse",
-        "Medical Records Officer",
-        "Medicine Inventory Handler",
+        "Secretary",
       ]
   
       const [
@@ -59,10 +58,9 @@ const AdminDashboard = () => {
   
         const colorMap = {
           Student: "#b2f0e8",
-          Doctor: "#8de5db",
+          Doctor: "#117c6f",
           Nurse: "#2fc4b2",
-          "Medical Records Officer": "#289c8e",
-          "Medicine Inventory Handler": "#117c6f",
+          "Secretary": "#289c8e",
           Unknown: "#ccc",
         }
   

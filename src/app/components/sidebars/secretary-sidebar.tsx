@@ -1,7 +1,7 @@
 "use client";
 import { JSX } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Menu, LayoutGrid, Activity, Users, Calendar, Clipboard, FilePlus, LogOut } from "lucide-react";
+import { Menu, LayoutGrid, Activity, Users, Calendar, Clipboard, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
 import { signout } from "@/lib/auth-actions";
 
@@ -45,7 +45,7 @@ function LogOutButton({ icon, text, onClick, isActive = false }: { icon: JSX.Ele
   );
 }
 
-export default function DoctorSidebar() {
+export default function SecretarySidebar() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [canShowButton, setCanShowButton] = useState(true); 
 
@@ -96,10 +96,8 @@ export default function DoctorSidebar() {
         {/* Sidebar Items */}
         <nav className="space-y-2">
           <div className="pt-20 md:pt-0"></div>
-          <SidebarItem icon={<LayoutGrid />} text="Dashboard" route="/doctor-dashboard" />
+          <SidebarItem icon={<LayoutGrid />} text="Dashboard" route="/secretary-dashboard" />
           <SidebarItem icon={<Calendar />} text="Consultations" route="/consultation-schedules" />
-          <SidebarItem icon={<Clipboard />} text="Health Records" route="/d-health-records" />
-          <SidebarItem icon={<FilePlus />} text="New Health Record" route="/d-new-health-record" />
           <div className="mt-10"></div>
           <LogOutButton icon={<LogOut />} text="Log Out" onClick={signout} />
         </nav>

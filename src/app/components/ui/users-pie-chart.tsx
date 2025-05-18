@@ -8,15 +8,11 @@ import {
 const roleChartConfig = {
   count: { label: "Users" },
   Student: { label: "Student", color: "#b2f0e8" },
-  Doctor: { label: "Doctor", color: "#8de5db" },
+  Doctor: { label: "Doctor", color: "#117c6f" },
   Nurse: { label: "Nurse", color: "#2fc4b2" },
-  "Medical Records Officer": {
-    label: "Medical Records Officer",
+  "Secretary": {
+    label: "Secretary",
     color: "#289c8e",
-  },
-  "Medicine Inventory Handler": {
-    label: "Medicine Inventory Handler",
-    color: "#117c6f",
   },
 }
 

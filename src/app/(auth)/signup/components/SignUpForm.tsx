@@ -65,7 +65,7 @@ export function SignUpForm() {
         </form>
         <div className="mt-4 text-center text-sm">
           Already have an account?{" "}
-          <Link href="/login" className="underline">
+          <Link href="/login" className="underline hover:text-[#2fd5bd]">
             Login
           </Link>
         </div>

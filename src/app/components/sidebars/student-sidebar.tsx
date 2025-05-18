@@ -1,8 +1,9 @@
 "use client";
 import { JSX } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Menu, LayoutGrid, Clipboard, Stethoscope, Clock1 } from "lucide-react";
+import { Menu, LayoutGrid, Clipboard, Stethoscope, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
+import { signout } from "@/lib/auth-actions";
 
 function SidebarItem({ icon, text, route }: { icon: JSX.Element; text: string; route: string }) {
   const router = useRouter();
@@ -18,6 +19,24 @@ function SidebarItem({ icon, text, route }: { icon: JSX.Element; text: string; r
           isActive
             ? "bg-white text-[#009da2]"
             : "text-gray-800 hover:bg-white hover:text-[#009da2]"
+        }`}
+    >
+      <span className="text-[20px]">{icon}</span>
+      <span className="whitespace-nowrap">{text}</span>
+    </button>
+  );
+}
+
+function LogOutButton({ icon, text, onClick, isActive = false }: { icon: JSX.Element; text: string; onClick: () => void; isActive?: boolean;}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center w-full p-3 rounded-md cursor-pointer transition-all
+        justify-start space-x-4
+        ${
+          isActive
+            ? "bg-white text-red-500"
+            : "text-gray-800 hover:bg-white hover:text-red-500"
         }`}
     >
       <span className="text-[20px]">{icon}</span>
@@ -80,6 +99,8 @@ export default function StudentSidebar() {
           <SidebarItem icon={<LayoutGrid />} text="Dashboard" route="/student-dashboard" />
           <SidebarItem icon={<Clipboard />} text="My Health Record" route="/student-record" />
           <SidebarItem icon={<Stethoscope />} text="Request Consultation" route="/consultation-request" />
+          <div className="mt-10"></div>
+          <LogOutButton icon={<LogOut />} text="Log Out" onClick={signout} />
         </nav>
       </div>
 

@@ -1,8 +1,9 @@
 "use client";
 import { JSX } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Menu, LayoutGrid, Activity, Users, Calendar, Clipboard, Pill } from "lucide-react";
+import { Menu, LayoutGrid, Activity, Users, Calendar, Clipboard, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
+import { signout } from "@/lib/auth-actions";
 
 function SidebarItem({ icon, text, route }: { icon: JSX.Element; text: string; route: string }) {
   const router = useRouter();
@@ -25,6 +26,25 @@ function SidebarItem({ icon, text, route }: { icon: JSX.Element; text: string; r
     </button>
   );
 }
+
+function LogOutButton({ icon, text, onClick, isActive = false }: { icon: JSX.Element; text: string; onClick: () => void; isActive?: boolean;}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center w-full p-3 rounded-md cursor-pointer transition-all
+        justify-start space-x-4
+        ${
+          isActive
+            ? "bg-white text-red-500"
+            : "text-gray-800 hover:bg-white hover:text-red-500"
+        }`}
+    >
+      <span className="text-[20px]">{icon}</span>
+      <span className="whitespace-nowrap">{text}</span>
+    </button>
+  );
+}
+
 
 export default function AdminSidebar() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -82,7 +102,8 @@ export default function AdminSidebar() {
           <SidebarItem icon={<Users />} text="Manage Users" route="/manage-users" />
           <SidebarItem icon={<Calendar />} text="Consultations" route="/consultation-schedules" />
           <SidebarItem icon={<Clipboard />} text="Health Records" route="/a-health-records" />
-          <SidebarItem icon={<Pill />} text="Medicine Inventory" route="/medicine-inventory" />
+          <div className="mt-10"></div>
+          <LogOutButton icon={<LogOut />} text="Log Out" onClick={signout} />
         </nav>
       </div>
 
