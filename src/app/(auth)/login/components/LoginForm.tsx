@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
-import SignInWithGoogleButton from "./SignInWithGoogleButton";
+//import SignInWithGoogleButton from "./SignInWithGoogleButton";
 
 export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +94,7 @@ export function LoginForm() {
               <div className="grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
-                  <Link href="#" className="ml-auto inline-block text-sm underline" onClick={() => setIsResettingPassword(true)}>
+                  <Link href="#" className="ml-auto inline-block text-sm underline hover:text-[#009da2]" onClick={() => setIsResettingPassword(true)}>
                     Forgot your password?
                   </Link>
                 </div>
@@ -103,7 +103,7 @@ export function LoginForm() {
               <Button type="submit" className="bg-[#009da2] text-white hover:bg-[#28b1b5]" disabled={isLocked}>
                 Login
               </Button>
-              <SignInWithGoogleButton />
+              {/* <SignInWithGoogleButton /> */}
             </div>
           </form>
         ) : (
@@ -121,7 +121,7 @@ export function LoginForm() {
               <Button type="submit" className="bg-[#009da2] text-white hover:bg-[#28b1b5]">
                 Reset Password
               </Button>
-              <Button type="button" onClick={() => setIsResettingPassword(false)} className="mt-2 text-sm">
+              <Button type="button" variant="outline" onClick={() => setIsResettingPassword(false)} className="mt-2 text-sm">
                 Back to login
               </Button>
             </div>
@@ -131,7 +131,7 @@ export function LoginForm() {
         {/* Sign up link */}
         <div className="mt-4 text-center text-sm">
           Don't have an account?{" "}
-          <Link href="/signup" className="underline">
+          <Link href="/signup" className="underline hover:text-[#009da2]">
             Sign up
           </Link>
         </div>
