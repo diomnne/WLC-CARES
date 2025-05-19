@@ -13,7 +13,7 @@ const MyHealthRecord = () => {
 
         {/* Main Content */}
         <main className="flex-1 p-6 overflow-auto">
-          <h1 className="text-xl font-bold pt-4">My Health Record</h1>
+          <h1 className="text-xl font-bold pt-4 text-gray-800">My Health Record</h1>
 
           {/* Personal Information Section */}
           <section className="bg-white rounded-xl p-6 mb-8">
