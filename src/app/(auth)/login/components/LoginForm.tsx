@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
-//import SignInWithGoogleButton from "./SignInWithGoogleButton";
 
 export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
@@ -73,9 +72,11 @@ export function LoginForm() {
   return (
     <Card className="mx-auto w-full max-w-sm sm:max-w-md">
       <CardHeader>
-        <CardTitle className="text-2xl font-semibold text-[#009da2]">Login</CardTitle>
+        <CardTitle className="text-2xl font-semibold text-[#009da2]">
+          {isResettingPassword ? "Reset Your Password" : "Login"}
+        </CardTitle>
         <CardDescription>
-          Enter your email below to login to your account
+          Enter your email below to {isResettingPassword ? "reset your password" : "login to your account"}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -103,7 +104,7 @@ export function LoginForm() {
               <Button type="submit" className="bg-[#009da2] text-white hover:bg-[#28b1b5]" disabled={isLocked}>
                 Login
               </Button>
-              {/* <SignInWithGoogleButton /> */}
+              
             </div>
           </form>
         ) : (
