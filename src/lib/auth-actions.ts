@@ -109,7 +109,7 @@ export async function signout() {
     redirect("/error");
   }
 
-  redirect("/login");
+  redirect("/");
 }
 
 export async function signInWithGoogle() {
