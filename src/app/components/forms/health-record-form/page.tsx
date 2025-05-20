@@ -1,11 +1,14 @@
 "use client";
 
-import React from 'react';
-import { useForm } from "react-hook-form";
+import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { createClient } from "@/utils/supabase/client";
+
+const supabase = createClient();
+
 import {
   Form,
   FormControl,
@@ -34,28 +37,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Check, ChevronsUpDown } from "lucide-react";
-// Import the Checkbox component
 import { Checkbox } from "@/components/ui/checkbox";
-
-
-// Define the possible medical history options based on the image
-const medicalHistoryOptions = [
-  { label: "Measles", value: "Measles" },
-  { label: "Mumps", value: "Mumps" },
-  { label: "German Measles", value: "German Measles" },
-  { label: "Chicken Pox", value: "Chicken Pox" },
-  { label: "Hepatitis", value: "Hepatitis" },
-  { label: "Allergies", value: "Allergies" },
-  { label: "Bronchial Asthma", value: "Bronchial Asthma" },
-  { label: "Heart Disorder", value: "Heart Disorder" },
-  { label: "Kidney Disorder", value: "Kidney Disorder" },
-  { label: "Convulsions", value: "Convulsions" },
-  { label: "Epilepsy", value: "Epilepsy" },
-  { label: "Psychoneurosis", value: "Psychoneurosis" },
-  { label: "Bleeding Tendency", value: "Bleeding Tendency" },
-  { label: "Others", value: "Others" },
-];
-
+import { useState, useEffect } from "react";
 
 const formSchema = z.object({
   student_name: z.string().min(1, "Student name is required."),
@@ -64,24 +47,24 @@ const formSchema = z.object({
   sex: z.string().min(1, "Sex is required."),
   home_address: z.string().min(1, "Home address is required."),
   student_contact: z.string().min(1, "Student contact is required."),
-
   academic_level: z.string({ required_error: "Academic level is required." }).min(1, "Academic level is required."),
   year_level: z.string().optional(),
   academic_program: z.string().optional(),
-
   father_name: z.string().min(1, "Father's name is required."),
   father_contact: z.string().optional(),
   father_email: z.string().email("Invalid email address.").min(1, "Father's email is required."),
   mother_name: z.string().min(1, "Mother's name is required."),
   mother_contact: z.string().optional(),
   mother_email: z.string().email("Invalid email address.").min(1, "Mother's email is required."),
-
   allergies: z.string().optional(),
-
-  // Field for Past Medical History (array of strings)
   past_medical_history: z.array(z.string()).optional(),
-  
 });
+
+const medicalHistoryOptions = [
+  "Measles", "Mumps", "German Measles", "Chicken Pox", "Hepatitis",
+  "Allergies", "Bronchial Asthma", "Heart Disorder", "Kidney Disorder",
+  "Convulsions", "Epilepsy", "Psychoneurosis", "Bleeding Tendency", "Others"
+].map((v) => ({ label: v, value: v }));
 
 const academicLevels = [
   { label: "Junior High School", value: "Junior High School" },
@@ -148,10 +131,18 @@ const academicProgramsByAcademicLevel: Record<string, { label: string; value: st
     { label: "COAB - BSEntrep", value: "BSEntrep" },
     { label: "CHM - BSHM", value: "BSHM" },
   ],
+  "Graduate School": [
+    { label: "MAEd (Major in Filipino)", value: "MAEd (Major in Filipino)" },
+    { label: "MAEd (Major in Elementary Education)", value: "MAEd (Major in Elementary Education)" },
+    { label: "MAEd (Major in Administration and Supervision)", value: "MAEd (Major in Administration and Supervision)" },
+  ],
 };
 
-
 export default function HealthRecordForm() {
+  const [loading, setLoading] = useState(true);
+  const [studentId, setStudentId] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false); // New state for edit mode
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -171,24 +162,84 @@ export default function HealthRecordForm() {
       mother_contact: "",
       mother_email: "",
       allergies: "",
-      // Initialize past_medical_history as an empty array
       past_medical_history: [],
     },
   });
 
   const watchedAcademicLevel = form.watch("academic_level");
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    try {
-      console.log(values);
-      toast.success("Form submitted successfully!");
-      form.reset();
-    } catch (error) {
-      console.error("Form submission error", error);
-      toast.error("Failed to submit the form.");
+  useEffect(() => {
+    const fetchStudent = async () => {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        toast.error("User not authenticated.");
+        return;
+      }
+
+      const { data: student, error: studentError } = await supabase
+        .from("students")
+        .select("id, roll_number, profile:profile_id(full_name)")
+        .eq("profile_id", user.id)
+        .single();
+
+      if (studentError || !student) {
+        toast.info("No existing health record. Please fill out the form.");
+        return;
+      }
+
+      setStudentId(student.id);
+      form.setValue("roll_number", student.roll_number);
+      setLoading(false);
+    };
+
+    fetchStudent();
+  }, [form]);
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!studentId) {
+      toast.error("Student ID is missing.");
+      return;
     }
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const { data: record, error: insertError } = await supabase
+      .from("health_records")
+      .insert({
+        student_id: studentId,
+        allergies: values.allergies,
+        notes: "",
+        submitted_by: user?.id,
+        status: "Pending",
+      })
+      .select("id")
+      .single();
+
+    if (insertError || !record) {
+      return toast.error("Failed to submit health record.");
+    }
+
+    const medHist = (values.past_medical_history || []).map((condition) => ({
+      health_record_id: record.id,
+      condition,
+      had_condition: true,
+    }));
+
+    const { error: medError } = await supabase
+      .from("medical_histories")
+      .insert(medHist);
+
+    if (medError) {
+      toast.error("Failed to save medical history.");
+      return;
+    }
+
+    toast.success("Health record submitted successfully.");
+    setIsEditMode(false); // Exit edit mode after submission
+    form.reset();
   };
 
+  if (loading) return <p className="text-center py-4">Loading...</p>;
 
   return (
     <Form {...form}>
@@ -196,6 +247,17 @@ export default function HealthRecordForm() {
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-8 max-w-4xl mx-auto py-3"
       >
+        {/* Edit Mode Toggle Button */}
+        <div className="flex justify-start">
+          <Button
+            type="button"
+            onClick={() => setIsEditMode(!isEditMode)}
+            className="bg-[#009da2] hover:bg-[#28b1b5]"
+          >
+            {isEditMode ? "Cancel" : "Edit Form"}
+          </Button>
+        </div>
+
         {/* Personal Information Section */}
         <h3 className="text-lg font-bold text-gray-800">Personal Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -206,7 +268,7 @@ export default function HealthRecordForm() {
               <FormItem>
                 <FormLabel>Name of Student</FormLabel>
                 <FormControl>
-                  <Input placeholder="Full Name" {...field} />
+                  <Input placeholder="Full Name" {...field} disabled={!isEditMode} />
                 </FormControl>
                 <FormDescription>
                   Student's full name.
@@ -227,6 +289,7 @@ export default function HealthRecordForm() {
                     className="w-full"
                     value={field.value instanceof Date ? format(new Date(field.value), "yyyy-MM-dd") : ""}
                     onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
+                    disabled={!isEditMode}
                   />
                 </FormControl>
                 <FormDescription>
@@ -242,7 +305,7 @@ export default function HealthRecordForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Sex</FormLabel>
-                <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-col gap-2 pt-2">
+                <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-col gap-2 pt-2" disabled={!isEditMode}>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="male" id="male" />
                     <FormLabel htmlFor="male" className="font-normal">Male</FormLabel>
@@ -267,7 +330,7 @@ export default function HealthRecordForm() {
             <FormItem>
               <FormLabel>Home Address</FormLabel>
               <FormControl>
-                <Textarea rows={2} placeholder="Building/House No., Street, Barangay, City/Municipality, Province, Zip Code" {...field} />
+                <Textarea rows={2} placeholder="Building/House No., Street, Barangay, City/Municipality, Province, Zip Code" {...field} disabled={!isEditMode} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -282,7 +345,7 @@ export default function HealthRecordForm() {
               <FormItem>
                 <FormLabel>Roll Number / Student ID</FormLabel>
                 <FormControl>
-                  <Input type="text" placeholder="e.g., 0123" {...field} />
+                  <Input type="text" placeholder="e.g., 0123" {...field} disabled />
                 </FormControl>
                 <FormDescription>
                   Student's 4-digit unique identification number.
@@ -298,7 +361,7 @@ export default function HealthRecordForm() {
               <FormItem>
                 <FormLabel>Student's Contact Number</FormLabel>
                 <FormControl>
-                  <Input type="tel" placeholder="09XXXXXXXXX" {...field} />
+                  <Input type="tel" placeholder="09XXXXXXXXX" {...field} disabled={!isEditMode} />
                 </FormControl>
                 <FormDescription>
                   Student's mobile number.
@@ -324,6 +387,7 @@ export default function HealthRecordForm() {
                       <Button
                         variant="outline"
                         role="combobox"
+                        disabled={!isEditMode}
                         className={cn(
                           "w-full justify-between",
                           !field.value && "text-muted-foreground"
@@ -386,7 +450,7 @@ export default function HealthRecordForm() {
                       <Button
                         variant="outline"
                         role="combobox"
-                        disabled={!watchedAcademicLevel || !(yearLevelsByAcademicLevel[watchedAcademicLevel]?.length > 0)}
+                        disabled={!isEditMode || !watchedAcademicLevel || !(yearLevelsByAcademicLevel[watchedAcademicLevel]?.length > 0)}
                         className={cn(
                           "w-full justify-between",
                           !field.value && "text-muted-foreground"
@@ -447,7 +511,7 @@ export default function HealthRecordForm() {
                       <Button
                         variant="outline"
                         role="combobox"
-                        disabled={!watchedAcademicLevel || !(academicProgramsByAcademicLevel[watchedAcademicLevel]?.length > 0)}
+                        disabled={!isEditMode || !watchedAcademicLevel || !(academicProgramsByAcademicLevel[watchedAcademicLevel]?.length > 0)}
                         className={cn(
                           "w-full justify-between",
                           !field.value && "text-muted-foreground"
@@ -492,15 +556,11 @@ export default function HealthRecordForm() {
                     </Command>
                   </PopoverContent>
                 </Popover>
-                <FormDescription>
-                  Only applicable for SHS or College.
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
-
 
         {/* Parent/Guardian Information Section */}
         <h3 className="text-lg font-bold text-gray-800 pt-4">Parent/Guardian Information</h3>
@@ -512,7 +572,7 @@ export default function HealthRecordForm() {
               <FormItem>
                 <FormLabel>Father's Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Father's Full Name" {...field} />
+                  <Input placeholder="Father's Full Name" {...field} disabled={!isEditMode} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -525,7 +585,7 @@ export default function HealthRecordForm() {
               <FormItem>
                 <FormLabel>Father's Contact Number</FormLabel>
                 <FormControl>
-                  <Input type="tel" placeholder="09XXXXXXXXX" {...field} />
+                  <Input type="tel" placeholder="09XXXXXXXXX" {...field} disabled={!isEditMode} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -538,7 +598,7 @@ export default function HealthRecordForm() {
               <FormItem>
                 <FormLabel>Father's Email</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="example@mail.com" {...field} />
+                  <Input type="email" placeholder="example@mail.com" {...field} disabled={!isEditMode} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -553,7 +613,7 @@ export default function HealthRecordForm() {
               <FormItem>
                 <FormLabel>Mother's Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Mother's Full Name" {...field} />
+                  <Input placeholder="Mother's Full Name" {...field} disabled={!isEditMode} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -566,7 +626,7 @@ export default function HealthRecordForm() {
               <FormItem>
                 <FormLabel>Mother's Contact Number</FormLabel>
                 <FormControl>
-                  <Input type="tel" placeholder="09XXXXXXXXX" {...field} />
+                  <Input type="tel" placeholder="09XXXXXXXXX" {...field} disabled={!isEditMode} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -579,7 +639,7 @@ export default function HealthRecordForm() {
               <FormItem>
                 <FormLabel>Mother's Email</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="example@mail.com" {...field} />
+                  <Input type="email" placeholder="example@mail.com" {...field} disabled={!isEditMode} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -589,8 +649,6 @@ export default function HealthRecordForm() {
 
         {/* Medical Information Section */}
         <h3 className="text-lg font-bold text-gray-800 pt-4">Medical Information</h3>
-
-        {/* Allergies Textarea (kept as is, but now grouped under Medical Info) */}
         <FormField
           control={form.control}
           name="allergies"
@@ -598,7 +656,7 @@ export default function HealthRecordForm() {
             <FormItem>
               <FormLabel>Allergies</FormLabel>
               <FormControl>
-                <Textarea placeholder="E.g., penicillin, peanuts. If none, indicate 'None'." {...field} />
+                <Textarea placeholder="E.g., penicillin, peanuts. If none, indicate 'None'." {...field} disabled={!isEditMode} />
               </FormControl>
               <FormDescription>
                 Comma-separated list of allergies, if any. If none, please indicate "None".
@@ -607,15 +665,12 @@ export default function HealthRecordForm() {
             </FormItem>
           )}
         />
-
-        {/* Past Medical History Checkboxes */}
         <FormField
           control={form.control}
           name="past_medical_history"
           render={({ field }) => (
             <FormItem className="space-y-3">
               <FormLabel>Past Medical History: Check if the student has/had:</FormLabel>
-              {/* Added grid classes for 3 columns on medium and larger screens */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {medicalHistoryOptions.map((item) => (
                   <FormField
@@ -627,6 +682,7 @@ export default function HealthRecordForm() {
                         <FormItem key={item.value} className="flex flex-row items-start space-x-3 space-y-0">
                           <FormControl>
                             <Checkbox
+                              className="border-gray-400 data-[state=checked]:bg-[#009da2] data-[state=checked]:border-[#009da2]"
                               checked={checkboxField.value?.includes(item.value)}
                               onCheckedChange={(checked) => {
                                 return checked
@@ -637,6 +693,7 @@ export default function HealthRecordForm() {
                                       )
                                     );
                               }}
+                              disabled={!isEditMode}
                             />
                           </FormControl>
                           <FormLabel className="font-normal">
@@ -653,11 +710,17 @@ export default function HealthRecordForm() {
           )}
         />
 
-
-        <div className="flex justify-end pt-4">
-          <Button type="submit" className="bg-[#009da2] hover:bg-[#28b1b5]">Submit</Button>
-        </div>
+        {/* Submit Button (only visible in edit mode) */}
+        {isEditMode && (
+          <div className="flex justify-end pt-4">
+            <Button type="submit" className="bg-[#009da2] hover:bg-[#28b1b5]">
+              Save Changes
+            </Button>
+          </div>
+        )}
       </form>
     </Form>
   );
 }
+
+
