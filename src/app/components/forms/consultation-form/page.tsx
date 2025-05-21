@@ -175,7 +175,7 @@ export default function ConsultationForm() {
         />
 
         <div className="flex justify-end pt-4">
-          <Button type="submit">Submit</Button>
+          <Button type="submit" className="bg-[#009da2] hover:bg-[#28b1b5]">Submit</Button>
         </div>
       </form>
     </Form>
