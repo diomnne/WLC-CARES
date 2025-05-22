@@ -77,16 +77,18 @@ export default function Navbar() {
     <nav className="flex items-center justify-between bg-white px-4 sm:px-6 md:px-8 lg:px-12 py-3 border-b border-b-gray-200 fixed top-0 left-0 right-0 z-10">
       {/* Logo and Title */}
       <div className="flex items-center space-x-2">
-        <Image
-          src="/logo.svg"
-          alt="WLC Cares Logo"
-          width={40}
-          height={40}
-          className="w-10 h-10"
-        />
-        <h1 className="text-xl font-bold text-[#009da2] hidden sm:inline cursor-default select-none">
-          WLC<span className="text-teal-400">CARES</span>
-        </h1>
+        <Link href="/" className="flex items-center space-x-2 cursor-pointer">
+          <Image
+            src="/logo.svg"
+            alt="WLC Cares Logo"
+            width={40}
+            height={40}
+            className="w-10 h-10"
+          />
+          <h1 className="text-xl font-bold text-[#009da2] hidden sm:inline cursor-default select-none">
+            WLC<span className="text-teal-400">CARES</span>
+          </h1>
+        </Link>
       </div>
 
       {/* Search Bar */}
