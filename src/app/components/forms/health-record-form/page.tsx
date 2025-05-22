@@ -140,8 +140,9 @@ const academicProgramsByAcademicLevel: Record<string, { label: string; value: st
 
 export default function HealthRecordForm() {
   const [loading, setLoading] = useState(true);
-  const [studentId, setStudentId] = useState<string | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false); // New state for edit mode
+  const [studentId, setStudentId] = useState<string | null>(null); // PK from 'students' table
+  const [profileId, setProfileId] = useState<string | null>(null); // PK from 'profiles' table (user.id)
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -151,7 +152,6 @@ export default function HealthRecordForm() {
       date_of_birth: undefined,
       sex: undefined,
       home_address: "",
-      student_contact: "",
       academic_level: "",
       year_level: "",
       academic_program: "",
@@ -169,75 +169,310 @@ export default function HealthRecordForm() {
   const watchedAcademicLevel = form.watch("academic_level");
 
   useEffect(() => {
-    const fetchStudent = async () => {
+    const fetchInitialData = async () => {
+      setLoading(true);
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
         toast.error("User not authenticated.");
+        setLoading(false);
         return;
       }
+      setProfileId(user.id);
 
-      const { data: student, error: studentError } = await supabase
+      // Fetch student data including profile name
+      const { data: studentData, error: studentError } = await supabase
         .from("students")
-        .select("id, roll_number, profile:profile_id(full_name)")
+        .select(`
+          *,
+          profile:profile_id (full_name)
+        `)
         .eq("profile_id", user.id)
         .single();
 
-      if (studentError || !student) {
-        toast.info("No existing health record. Please fill out the form.");
-        return;
-      }
+      if (studentError || !studentData) {
+        // If no student record, try to get name from profile for new student entry
+        const { data: userProfile, error: profileError } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
+          .single();
 
-      setStudentId(student.id);
-      form.setValue("roll_number", student.roll_number);
+        if (userProfile) {
+          form.setValue("student_name", userProfile.full_name || "");
+        } else {
+            console.error("Profile not found for new student setup:", profileError)
+        }
+        // Roll number might be something they need to input if it's a new student not yet in 'students'
+        // Or it's assigned upon creation of student record. Assuming for now it might be blank or they enter it.
+        toast.info("No existing student record found. Some fields may need to be entered manually if creating a new record, or pre-filled if an admin creates the student entry first.");
+        //setIsEditMode(true); // Optionally enable edit mode if no student data
+      } else {
+        setStudentId(studentData.id);
+        form.setValue("student_name", studentData.profile?.full_name || studentData.student_name || ""); // Prioritize profile.full_name
+        form.setValue("roll_number", studentData.roll_number || "");
+        form.setValue("date_of_birth", studentData.date_of_birth ? new Date(studentData.date_of_birth) : null);
+        form.setValue("sex", studentData.sex || undefined);
+        form.setValue("home_address", studentData.home_address || "");
+        form.setValue("student_contact", studentData.contact_number || "");
+        form.setValue("academic_level", studentData.academic_level || "");
+        form.setValue("year_level", studentData.year_level || "");
+        form.setValue("academic_program", studentData.academic_program || "");
+
+        // Fetch guardians
+        const { data: studentGuardians, error: sgError } = await supabase
+          .from("student_guardians")
+          .select(`
+            relationship,
+            guardian:guardian_id (id, full_name, contact_number, email)
+          `)
+          .eq("student_id", studentData.id);
+
+        if (sgError) {
+          toast.error("Failed to fetch guardian information.");
+        } else if (studentGuardians) {
+          studentGuardians.forEach(sg => {
+            if (sg.guardian) {
+              if (Array.isArray(sg.guardian) && sg.guardian.length > 0) {
+                const guardian = sg.guardian[0];
+                if (sg.relationship === "Father") {
+                  form.setValue("father_name", guardian.full_name || "");
+                  form.setValue("father_contact", guardian.contact_number || "");
+                  form.setValue("father_email", guardian.email || "");
+                } else if (sg.relationship === "Mother") {
+                  form.setValue("mother_name", guardian.full_name || "");
+                  form.setValue("mother_contact", guardian.contact_number || "");
+                  form.setValue("mother_email", guardian.email || "");
+                }
+              }
+            }
+          });
+        }
+
+        // Fetch latest health record to pre-fill allergies and medical history
+        const { data: healthRecord, error: hrError } = await supabase
+          .from("health_records")
+          .select("id, allergies")
+          .eq("student_id", studentData.id)
+          .order("created_at", { ascending: false }) // Assuming you have created_at
+          .limit(1)
+          .single();
+
+        if (healthRecord) {
+          form.setValue("allergies", healthRecord.allergies || "");
+          const { data: medHistory, error: mhError } = await supabase
+            .from("medical_histories")
+            .select("condition")
+            .eq("health_record_id", healthRecord.id)
+            .eq("had_condition", true);
+
+          if (medHistory) {
+            form.setValue("past_medical_history", medHistory.map(mh => mh.condition));
+          }
+        }
+      }
       setLoading(false);
     };
 
-    fetchStudent();
+    fetchInitialData();
   }, [form]);
 
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!studentId) {
-      toast.error("Student ID is missing.");
+    if (!profileId) {
+      toast.error("User profile ID is missing. Cannot submit.");
       return;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
+    setLoading(true);
 
-    const { data: record, error: insertError } = await supabase
-      .from("health_records")
-      .insert({
-        student_id: studentId,
-        allergies: values.allergies,
-        notes: "",
-        submitted_by: user?.id,
-        status: "Pending",
-      })
-      .select("id")
-      .single();
+    try {
+        // --- 1. Upsert Student Data ---
+        let currentStudentId = studentId;
+        const studentPayload = {
+            profile_id: profileId,
+            student_name: values.student_name, // student_name in students table
+            roll_number: values.roll_number,
+            date_of_birth: values.date_of_birth ? format(values.date_of_birth, "yyyy-MM-dd") : null,
+            sex: values.sex,
+            home_address: values.home_address,
+            contact_number: values.student_contact,
+            academic_level: values.academic_level,
+            year_level: values.year_level || null,
+            academic_program: values.academic_program || null,
+            updated_at: new Date().toISOString(),
+        };
 
-    if (insertError || !record) {
-      return toast.error("Failed to submit health record.");
+        if (currentStudentId) { // Update existing student
+            const { data: updatedStudent, error: studentUpdateError } = await supabase
+                .from("students")
+                .update(studentPayload)
+                .eq("id", currentStudentId)
+                .select("id")
+                .single();
+            if (studentUpdateError) throw new Error(`Failed to update student record: ${studentUpdateError.message}`);
+            if (!updatedStudent) throw new Error("Student update returned no data.");
+        } else { // Insert new student
+            const { data: newStudent, error: studentInsertError } = await supabase
+                .from("students")
+                .insert({...studentPayload, created_at: new Date().toISOString()})
+                .select("id")
+                .single();
+            if (studentInsertError) throw new Error(`Failed to create student record: ${studentInsertError.message}`);
+            if (!newStudent) throw new Error("Student insert returned no data.");
+            currentStudentId = newStudent.id;
+            setStudentId(newStudent.id); // Update state with new student ID
+        }
+
+        if (!currentStudentId) {
+            throw new Error("Student ID is missing after student data operation.");
+        }
+
+        // --- 2. Upsert Guardians and Student-Guardian Relationships ---
+        const guardianUpserts = async (guardianName: string, guardianContact: string | undefined, guardianEmail: string, relationship: "Father" | "Mother") => {
+            if (!guardianName || !guardianEmail) return null; // Basic validation
+
+            // Check if guardian exists for this student with this relationship
+            const { data: existingStudentGuardian, error: sgQueryError } = await supabase
+                .from("student_guardians")
+                .select("guardian_id, guardian:guardian_id(*)")
+                .eq("student_id", currentStudentId!)
+                .eq("relationship", relationship)
+                .single();
+
+            let guardianIdToLink: string;
+
+            if (sgQueryError && sgQueryError.code !== 'PGRST116') { // PGRST116 is ' exactamente una fila (o ninguna)'
+                 console.error(`Error querying student_guardian for ${relationship}:`, sgQueryError);
+            }
+
+
+            if (existingStudentGuardian && existingStudentGuardian.guardian) {
+                // Guardian link exists, update guardian info
+                const { data: updatedGuardian, error: guardianUpdateError } = await supabase
+                    .from("guardians")
+                    .update({
+                        full_name: guardianName,
+                        contact_number: guardianContact || null,
+                        email: guardianEmail,
+                    })
+                    .eq("id", existingStudentGuardian.guardian_id)
+                    .select("id")
+                    .single();
+                if (guardianUpdateError) throw new Error(`Failed to update ${relationship}: ${guardianUpdateError.message}`);
+                if (!updatedGuardian) throw new Error(`${relationship} update returned no data.`);
+                guardianIdToLink = updatedGuardian.id;
+            } else {
+                // No existing link for this relationship, or guardian doesn't exist.
+                // Try to find guardian by email first (assuming email is unique for guardians)
+                let { data: existingGuardianByEmail, error: emailQueryError } = await supabase
+                    .from("guardians")
+                    .select("id")
+                    .eq("email", guardianEmail)
+                    .single();
+
+                if (emailQueryError && emailQueryError.code !== 'PGRST116') {
+                    console.error(`Error querying guardian by email for ${relationship}:`, emailQueryError);
+                }
+
+                if (existingGuardianByEmail) {
+                    guardianIdToLink = existingGuardianByEmail.id;
+                     // Optionally update this guardian's info if names/contacts differ
+                    const { error: guardianContactUpdateError } = await supabase
+                        .from("guardians")
+                        .update({ full_name: guardianName, contact_number: guardianContact || null })
+                        .eq("id", guardianIdToLink);
+                    if (guardianContactUpdateError) console.warn(`Could not update contact for existing guardian ${guardianEmail}: ${guardianContactUpdateError.message}`);
+                } else {
+                    // Guardian does not exist, insert new guardian
+                    const { data: newGuardian, error: guardianInsertError } = await supabase
+                        .from("guardians")
+                        .insert({
+                            full_name: guardianName,
+                            contact_number: guardianContact || null,
+                            email: guardianEmail,
+                            created_at: new Date().toISOString(),
+                        })
+                        .select("id")
+                        .single();
+                    if (guardianInsertError) throw new Error(`Failed to insert ${relationship}: ${guardianInsertError.message}`);
+                    if (!newGuardian) throw new Error(`${relationship} insert returned no data.`);
+                    guardianIdToLink = newGuardian.id;
+                }
+
+                // Create student_guardian link if it didn't exist for this relationship
+                if (!existingStudentGuardian) {
+                    const { error: sgInsertError } = await supabase
+                        .from("student_guardians")
+                        .insert({
+                            student_id: currentStudentId!,
+                            guardian_id: guardianIdToLink,
+                            relationship: relationship,
+                            is_primary: false,
+                        });
+                    if (sgInsertError) throw new Error(`Failed to link ${relationship} to student: ${sgInsertError.message}`);
+                }
+            }
+        };
+
+        await guardianUpserts(values.father_name, values.father_contact, values.father_email, "Father");
+        await guardianUpserts(values.mother_name, values.mother_contact, values.mother_email, "Mother");
+
+        // --- 3. Insert Health Record ---
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("User not available for submission.");
+
+        const { data: healthRecord, error: hrInsertError } = await supabase
+            .from("health_records")
+            .insert({
+                student_id: currentStudentId!,
+                allergies: values.allergies || null,
+                notes: "",
+                submitted_by: user.id,
+                status: "Pending",
+            })
+            .select("id")
+            .single();
+
+        if (hrInsertError) throw new Error(`Failed to submit health record: ${hrInsertError.message}`);
+        if (!healthRecord) throw new Error("Health record insert returned no data.");
+
+        // --- 4. Insert Medical History ---
+        if (values.past_medical_history && values.past_medical_history.length > 0) {
+            const medicalHistoriesToInsert = values.past_medical_history.map((condition) => ({
+                health_record_id: healthRecord.id,
+                condition: condition,
+                had_condition: true,
+            }));
+
+            const { error: mhInsertError } = await supabase
+                .from("medical_histories")
+                .insert(medicalHistoriesToInsert);
+
+            if (mhInsertError) throw new Error(`Failed to save medical history: ${mhInsertError.message}`);
+        }
+
+        toast.success("Health record submitted successfully!");
+        setIsEditMode(false);
+        // form.reset(); // Decide if you want to reset or keep pre-filled data
+        // Re-fetch data to show the latest saved info, including the new health record details
+         const { data: studentData } = await supabase.from("students").select(`*, profile:profile_id (full_name)`).eq("id", currentStudentId!).single();
+         if (studentData) {
+             form.setValue("student_name", studentData.profile?.full_name || studentData.student_name || "");
+             // ... (re-set other student fields if needed, or rely on a full fetchInitialData call)
+         }
+         const { data: hrData } = await supabase.from("health_records").select("id, allergies").eq("id", healthRecord.id).single();
+         if (hrData) {
+            form.setValue("allergies", hrData.allergies || "");
+         }
+         // ... re-fetch and set medical history if needed
+
+    } catch (error: any) {
+        console.error("Submission error:", error);
+        toast.error(error.message || "An unexpected error occurred during submission.");
+    } finally {
+        setLoading(false);
     }
-
-    const medHist = (values.past_medical_history || []).map((condition) => ({
-      health_record_id: record.id,
-      condition,
-      had_condition: true,
-    }));
-
-    const { error: medError } = await supabase
-      .from("medical_histories")
-      .insert(medHist);
-
-    if (medError) {
-      toast.error("Failed to save medical history.");
-      return;
-    }
-
-    toast.success("Health record submitted successfully.");
-    setIsEditMode(false); // Exit edit mode after submission
-    form.reset();
-  };
+};
 
   if (loading) return <p className="text-center py-4">Loading...</p>;
 
@@ -247,14 +482,13 @@ export default function HealthRecordForm() {
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-8 max-w-4xl mx-auto py-3"
       >
-        {/* Edit Mode Toggle Button */}
         <div className="flex justify-start">
           <Button
             type="button"
             onClick={() => setIsEditMode(!isEditMode)}
             className="bg-[#009da2] hover:bg-[#28b1b5]"
           >
-            {isEditMode ? "Cancel" : "Edit Form"}
+            {isEditMode ? "Cancel Edit" : "Update Record"}
           </Button>
         </div>
 
@@ -268,7 +502,8 @@ export default function HealthRecordForm() {
               <FormItem>
                 <FormLabel>Name of Student</FormLabel>
                 <FormControl>
-                  <Input placeholder="Full Name" {...field} disabled={!isEditMode} />
+                  {/* Student name is fetched and should generally not be editable by the student directly if it comes from an official profile */}
+                  <Input placeholder="Full Name" {...field} disabled />
                 </FormControl>
                 <FormDescription>
                   Student's full name.
@@ -287,12 +522,12 @@ export default function HealthRecordForm() {
                   <Input
                     type="date"
                     className="w-full"
-                    value={field.value instanceof Date ? format(new Date(field.value), "yyyy-MM-dd") : ""}
+                    value={field.value instanceof Date ? format(field.value, "yyyy-MM-dd") : ""}
                     onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
                     disabled={!isEditMode}
                   />
                 </FormControl>
-                <FormDescription>
+                 <FormDescription>
                   This is used to calculate the age.
                 </FormDescription>
                 <FormMessage />
@@ -307,11 +542,11 @@ export default function HealthRecordForm() {
                 <FormLabel>Sex</FormLabel>
                 <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-col gap-2 pt-2" disabled={!isEditMode}>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="male" id="male" />
+                    <RadioGroupItem value="Male" id="male" /> {/* Value matches typical DB entries */}
                     <FormLabel htmlFor="male" className="font-normal">Male</FormLabel>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="female" id="female" />
+                    <RadioGroupItem value="Female" id="female" /> {/* Value matches typical DB entries */}
                     <FormLabel htmlFor="female" className="font-normal">Female</FormLabel>
                   </div>
                 </RadioGroup>
@@ -332,11 +567,13 @@ export default function HealthRecordForm() {
               <FormControl>
                 <Textarea rows={2} placeholder="Building/House No., Street, Barangay, City/Municipality, Province, Zip Code" {...field} disabled={!isEditMode} />
               </FormControl>
+              <FormDescription>
+                  e.g., 123 ABC Road, Brgy Southwest, Ormoc City, Leyte, 6541
+                </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-        {/* Student Contact and Roll Number Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -348,7 +585,7 @@ export default function HealthRecordForm() {
                   <Input type="text" placeholder="e.g., 0123" {...field} disabled />
                 </FormControl>
                 <FormDescription>
-                  Student's 4-digit unique identification number.
+                  Student's unique identification number.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -356,7 +593,7 @@ export default function HealthRecordForm() {
           />
           <FormField
             control={form.control}
-            name="student_contact"
+            name="student_contact" // Updated name
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Student's Contact Number</FormLabel>
@@ -564,6 +801,7 @@ export default function HealthRecordForm() {
 
         {/* Parent/Guardian Information Section */}
         <h3 className="text-lg font-bold text-gray-800 pt-4">Parent/Guardian Information</h3>
+        {/* Father */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <FormField
             control={form.control}
@@ -605,6 +843,7 @@ export default function HealthRecordForm() {
             )}
           />
         </div>
+        {/* Mother */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <FormField
             control={form.control}
@@ -668,7 +907,7 @@ export default function HealthRecordForm() {
         <FormField
           control={form.control}
           name="past_medical_history"
-          render={({ field }) => (
+          render={() => ( // Main field render doesn't need 'field' if using individual checkbox fields
             <FormItem className="space-y-3">
               <FormLabel>Past Medical History: Check if the student has/had:</FormLabel>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -676,8 +915,8 @@ export default function HealthRecordForm() {
                   <FormField
                     key={item.value}
                     control={form.control}
-                    name="past_medical_history"
-                    render={({ field: checkboxField }) => {
+                    name="past_medical_history" // Each checkbox still manipulates this array
+                    render={({ field: checkboxField }) => { // 'field' here is for the array
                       return (
                         <FormItem key={item.value} className="flex flex-row items-start space-x-3 space-y-0">
                           <FormControl>
@@ -685,10 +924,11 @@ export default function HealthRecordForm() {
                               className="border-gray-400 data-[state=checked]:bg-[#009da2] data-[state=checked]:border-[#009da2]"
                               checked={checkboxField.value?.includes(item.value)}
                               onCheckedChange={(checked) => {
+                                const currentValue = checkboxField.value || [];
                                 return checked
-                                  ? checkboxField.onChange([...(checkboxField.value || []), item.value])
+                                  ? checkboxField.onChange([...currentValue, item.value])
                                   : checkboxField.onChange(
-                                      checkboxField.value?.filter(
+                                      currentValue.filter(
                                         (value) => value !== item.value
                                       )
                                     );
@@ -710,11 +950,10 @@ export default function HealthRecordForm() {
           )}
         />
 
-        {/* Submit Button (only visible in edit mode) */}
         {isEditMode && (
           <div className="flex justify-end pt-4">
-            <Button type="submit" className="bg-[#009da2] hover:bg-[#28b1b5]">
-              Save Changes
+            <Button type="submit" className="bg-[#009da2] hover:bg-[#28b1b5]" disabled={loading}>
+              {loading ? "Saving..." : "Save Changes"}
             </Button>
           </div>
         )}
