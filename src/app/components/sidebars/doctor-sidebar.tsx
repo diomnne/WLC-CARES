@@ -84,7 +84,7 @@ export default function DoctorSidebar() {
       )}
 
       <div
-        className={`fixed left-0 bg-[#ddf5e7] border-t-1 border-t-gray-200 p-5 w-64 transition-transform duration-300 z-40
+        className={`fixed left-0 bg-[#e6f1eb] border-t-1 border-t-gray-200 p-5 w-64 transition-transform duration-300 z-40
           ${
             isSidebarOpen
               ? "translate-x-0 shadow-lg h-screen top-0"
