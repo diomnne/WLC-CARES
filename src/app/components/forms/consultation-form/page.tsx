@@ -7,6 +7,7 @@ import * as z from "zod";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { createClient } from "@/utils/supabase/client";
+import { logActivity } from "@/utils/supabase/logger";
 
 const supabase = createClient();
 
@@ -89,6 +90,15 @@ export default function ConsultationForm() {
       console.error(error);
     } else {
       toast.success("Consultation request submitted.");
+
+      // Log activity
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await logActivity({ 
+          userId: user.id, 
+          action: "Consultation Request Submitted" 
+        });
+      }
       form.reset();
     }
   };
