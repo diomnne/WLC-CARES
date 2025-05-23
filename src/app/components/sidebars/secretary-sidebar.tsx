@@ -1,7 +1,7 @@
 "use client";
 import { JSX } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Menu, LayoutGrid, Activity, Users, Calendar, Clipboard, LogOut } from "lucide-react";
+import { Menu, LayoutGrid, Calendar, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
 import { signout } from "@/lib/auth-actions";
 
@@ -84,7 +84,7 @@ export default function SecretarySidebar() {
       )}
 
       <div
-        className={`fixed left-0 bg-[#ffebea] border-t-1 border-t-gray-200 p-5 w-64 transition-transform duration-300 z-40
+        className={`fixed left-0 bg-[#e6f1eb] border-t-1 border-t-gray-200 p-5 w-64 transition-transform duration-300 z-40
           ${
             isSidebarOpen
               ? "translate-x-0 shadow-lg h-screen top-0"

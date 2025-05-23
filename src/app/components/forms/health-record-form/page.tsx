@@ -6,6 +6,7 @@ import * as z from "zod";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { createClient } from "@/utils/supabase/client";
+import { logActivity } from "@/utils/supabase/logger";
 
 const supabase = createClient();
 
@@ -454,17 +455,107 @@ export default function HealthRecordForm() {
         toast.success("Health record submitted successfully!");
         setIsEditMode(false);
         // form.reset(); // Decide if you want to reset or keep pre-filled data
+
+        // Log activity
+        if (user && user.id) {
+          await logActivity({ userId: user.id, action: "Health record updated" });
+        }
+
         // Re-fetch data to show the latest saved info, including the new health record details
-         const { data: studentData } = await supabase.from("students").select(`*, profile:profile_id (full_name)`).eq("id", currentStudentId!).single();
-         if (studentData) {
-             form.setValue("student_name", studentData.profile?.full_name || studentData.student_name || "");
-             // ... (re-set other student fields if needed, or rely on a full fetchInitialData call)
-         }
-         const { data: hrData } = await supabase.from("health_records").select("id, allergies").eq("id", healthRecord.id).single();
-         if (hrData) {
-            form.setValue("allergies", hrData.allergies || "");
-         }
-         // ... re-fetch and set medical history if needed
+        setLoading(true);
+         const { data: latestStudentData, error: studentRefetchError } = await supabase
+            .from("students")
+            .select(`*, profile:profile_id (full_name)`)
+            .eq("id", currentStudentId!) // currentStudentId is from the upsert logic
+            .single();
+
+        if (studentRefetchError) {
+            toast.error("Error re-fetching student details.");
+        } else if (latestStudentData) {
+            form.setValue("student_name", latestStudentData.profile?.full_name || latestStudentData.student_name || "");
+            form.setValue("roll_number", latestStudentData.roll_number || "");
+            form.setValue("date_of_birth", latestStudentData.date_of_birth ? new Date(latestStudentData.date_of_birth) : null);
+            form.setValue("sex", latestStudentData.sex || undefined);
+            form.setValue("home_address", latestStudentData.home_address || "");
+            form.setValue("student_contact", latestStudentData.contact_number || ""); // Ensure field name matches form
+            form.setValue("academic_level", latestStudentData.academic_level || "");
+            form.setValue("year_level", latestStudentData.year_level || "");
+            form.setValue("academic_program", latestStudentData.academic_program || "");
+        }
+
+        // 2. Re-fetch Guardian Information
+        const { data: studentGuardians, error: sgRefetchError } = await supabase
+            .from("student_guardians")
+            .select(`relationship, guardian:guardian_id (full_name, contact_number, email)`)
+            .eq("student_id", currentStudentId!);
+
+        if (sgRefetchError) {
+            toast.error("Error re-fetching guardian information.");
+        } else if (studentGuardians) {
+            // Reset guardian fields before repopulating to handle cases where a guardian might have been removed (if applicable)
+            form.setValue("father_name", "");
+            form.setValue("father_contact", "");
+            form.setValue("father_email", "");
+            form.setValue("mother_name", "");
+            form.setValue("mother_contact", "");
+            form.setValue("mother_email", "");
+
+            studentGuardians.forEach(sg => {
+                const guardianData = sg.guardian ? (Array.isArray(sg.guardian) ? sg.guardian[0] : sg.guardian) : null;
+
+                if (guardianData) {
+                    if (sg.relationship === "Father") {
+                        form.setValue("father_name", guardianData.full_name || "");
+                        form.setValue("father_contact", guardianData.contact_number || "");
+                        form.setValue("father_email", guardianData.email || "");
+                    } else if (sg.relationship === "Mother") {
+                        form.setValue("mother_name", guardianData.full_name || "");
+                        form.setValue("mother_contact", guardianData.contact_number || "");
+                        form.setValue("mother_email", guardianData.email || "");
+                    }
+                }
+            });
+        }
+
+        if (healthRecord && healthRecord.id) { // Ensure healthRecord and its id are available
+            const { data: latestHealthRecord, error: hrRefetchError } = await supabase
+                .from("health_records")
+                .select("id, allergies")
+                .eq("id", healthRecord.id)
+                .single();
+
+            if (hrRefetchError) {
+                toast.error("Error re-fetching health record details.");
+            } else if (latestHealthRecord) {
+                form.setValue("allergies", latestHealthRecord.allergies || "");
+
+                // Fetch associated medical history for the newly fetched/confirmed health record
+                const { data: latestMedHistory, error: mhRefetchError } = await supabase
+                    .from("medical_histories")
+                    .select("condition")
+                    .eq("health_record_id", latestHealthRecord.id)
+                    .eq("had_condition", true);
+
+                if (mhRefetchError) {
+                    toast.error("Error re-fetching medical history.");
+                    form.setValue("past_medical_history", []);
+                } else if (latestMedHistory) {
+                    form.setValue("past_medical_history", latestMedHistory.map(mh => mh.condition));
+                } else {
+                    form.setValue("past_medical_history", []); // No history items found
+                }
+            } else {
+                // If health record itself couldn't be refetched
+                form.setValue("allergies", "");
+                form.setValue("past_medical_history", []);
+            }
+        } else {
+            // Fallback if healthRecord object or its ID wasn't available for some reason
+             form.setValue("allergies", ""); // Or values.allergies from the form before submit
+             form.setValue("past_medical_history", values.past_medical_history || []); // Or values from form
+             toast.warning("Could not re-fetch latest health details; health record ID was missing post-submission.");
+        }
+        
 
     } catch (error: any) {
         console.error("Submission error:", error);

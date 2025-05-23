@@ -67,7 +67,7 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#ffebea] p-3">
+    <main className="flex min-h-screen items-center justify-center bg-[#ddf5e7] p-3">
       <div className="flex flex-col md:flex-row items-center md:justify-between max-w-6xl w-full pt-10">
         <div className="flex flex-col items-center md:items-start text-center md:text-left mb-8 md:mb-0 md:w-1/2">
           <h1 className="text-3xl md:text-4xl font-semibold text-[#009da2] leading-tight">
