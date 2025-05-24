@@ -1,7 +1,7 @@
 "use client";
 
 
-import Sidebar from "@/app/components/sidebars/admin-sidebar";
+import Sidebar from "@/app/components/sidebars/secretary-sidebar";
 
 const ConsultationSchedules = () => {
   return (
@@ -16,7 +16,7 @@ const ConsultationSchedules = () => {
 
         {/* Main Content Area */}
         <main className="flex-1 p-6">
-          <h1 className="text-xl font-bold">This is the consultation schedules page</h1>
+          <h1 className="text-xl pt-4 font-bold text-gray-800">This is the consultation schedules page</h1>
         </main>
       </div>
     </div>

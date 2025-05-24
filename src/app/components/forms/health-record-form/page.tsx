@@ -260,6 +260,7 @@ export default function HealthRecordForm() {
 
         if (healthRecord) {
           form.setValue("allergies", healthRecord.allergies || "");
+
           const { data: medHistory, error: mhError } = await supabase
             .from("medical_histories")
             .select("condition")
@@ -271,7 +272,7 @@ export default function HealthRecordForm() {
           }
         }
       }
-      setLoading(false);
+      setLoading(false); 
     };
 
     fetchInitialData();
@@ -279,291 +280,194 @@ export default function HealthRecordForm() {
 
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!profileId) {
-      toast.error("User profile ID is missing. Cannot submit.");
-      return;
-    }
-
-    setLoading(true);
-
+    setLoading(true); // Start loading state
     try {
-        // --- 1. Upsert Student Data ---
-        let currentStudentId = studentId;
-        const studentPayload = {
-            profile_id: profileId,
-            student_name: values.student_name, // student_name in students table
-            roll_number: values.roll_number,
-            date_of_birth: values.date_of_birth ? format(values.date_of_birth, "yyyy-MM-dd") : null,
-            sex: values.sex,
-            home_address: values.home_address,
-            contact_number: values.student_contact,
-            academic_level: values.academic_level,
-            year_level: values.year_level || null,
-            academic_program: values.academic_program || null,
-            updated_at: new Date().toISOString(),
-        };
+      if (!studentId) {
+        toast.error("Student ID not found. Cannot save health record.");
+        console.error("Attempted to submit health record without a studentId.");
+        return; // Early return if critical data is missing
+      }
+      if (!profileId) {
+        toast.error("User profile not found. Cannot determine submitter.");
+        console.error("Attempted to submit health record without a profileId for submitted_by field.");
+        return; // Early return
+      }
 
-        if (currentStudentId) { // Update existing student
-            const { data: updatedStudent, error: studentUpdateError } = await supabase
-                .from("students")
-                .update(studentPayload)
-                .eq("id", currentStudentId)
-                .select("id")
-                .single();
-            if (studentUpdateError) throw new Error(`Failed to update student record: ${studentUpdateError.message}`);
-            if (!updatedStudent) throw new Error("Student update returned no data.");
-        } else { // Insert new student
-            const { data: newStudent, error: studentInsertError } = await supabase
-                .from("students")
-                .insert({...studentPayload, created_at: new Date().toISOString()})
-                .select("id")
-                .single();
-            if (studentInsertError) throw new Error(`Failed to create student record: ${studentInsertError.message}`);
-            if (!newStudent) throw new Error("Student insert returned no data.");
-            currentStudentId = newStudent.id;
-            setStudentId(newStudent.id); // Update state with new student ID
-        }
+      console.log("Form values submitted:", values);
+      console.log("Submitting with studentId:", studentId, "and profileId:", profileId);
 
-        if (!currentStudentId) {
-            throw new Error("Student ID is missing after student data operation.");
-        }
+      const healthRecordDataToUpdate = {
+        allergies: values.allergies || null,
+        notes: "", // Or values.notes if you add it to formSchema
+        submitted_by: profileId,
+        last_updated_at: new Date().toISOString(),
+      };
 
-        // --- 2. Upsert Guardians and Student-Guardian Relationships ---
-        const guardianUpserts = async (guardianName: string, guardianContact: string | undefined, guardianEmail: string, relationship: "Father" | "Mother") => {
-            if (!guardianName || !guardianEmail) return null; // Basic validation
+      const { data: updatedHealthRecord, error: healthRecordUpdateError } = await supabase
+        .from("health_records")
+        .update(healthRecordDataToUpdate)
+        .eq("student_id", studentId)
+        .select("id")
+        .single();
 
-            // Check if guardian exists for this student with this relationship
-            const { data: existingStudentGuardian, error: sgQueryError } = await supabase
-                .from("student_guardians")
-                .select("guardian_id, guardian:guardian_id(*)")
-                .eq("student_id", currentStudentId!)
-                .eq("relationship", relationship)
-                .single();
+      if (healthRecordUpdateError || !updatedHealthRecord) {
+        toast.error(`Failed to update health record: ${healthRecordUpdateError?.message || 'No record returned'}`);
+        console.error("Error updating health record:", healthRecordUpdateError);
+        await logActivity({ 
+          userId: profileId, // profileId should be valid here due to the check above
+          action: `Error updating health record for student ${studentId}: ${healthRecordUpdateError?.message}. Submitted data: ${JSON.stringify(healthRecordDataToUpdate)}` 
+        });
+        return; // Stop if health record update failed
+      }
 
-            let guardianIdToLink: string;
+      const currentHealthRecordId = updatedHealthRecord.id;
+      console.log("Health record updated successfully, ID:", currentHealthRecordId);
 
-            if (sgQueryError && sgQueryError.code !== 'PGRST116') { // PGRST116 is ' exactamente una fila (o ninguna)'
-                 console.error(`Error querying student_guardian for ${relationship}:`, sgQueryError);
-            }
+      const { error: deleteMHError } = await supabase
+          .from("medical_histories")
+          .delete()
+          .eq("health_record_id", currentHealthRecordId);
 
+      if (deleteMHError) {
+          toast.error(`Failed to clear previous medical history: ${deleteMHError.message}`);
+          console.error("Error deleting medical histories:", deleteMHError);
+          await logActivity({ 
+              userId: profileId,
+              action: `Error clearing medical history for health_record_id ${currentHealthRecordId}: ${deleteMHError.message}` 
+          });
+      }
 
-            if (existingStudentGuardian && existingStudentGuardian.guardian) {
-                // Guardian link exists, update guardian info
-                const { data: updatedGuardian, error: guardianUpdateError } = await supabase
-                    .from("guardians")
-                    .update({
-                        full_name: guardianName,
-                        contact_number: guardianContact || null,
-                        email: guardianEmail,
-                    })
-                    .eq("id", existingStudentGuardian.guardian_id)
-                    .select("id")
-                    .single();
-                if (guardianUpdateError) throw new Error(`Failed to update ${relationship}: ${guardianUpdateError.message}`);
-                if (!updatedGuardian) throw new Error(`${relationship} update returned no data.`);
-                guardianIdToLink = updatedGuardian.id;
-            } else {
-                // No existing link for this relationship, or guardian doesn't exist.
-                // Try to find guardian by email first (assuming email is unique for guardians)
-                let { data: existingGuardianByEmail, error: emailQueryError } = await supabase
-                    .from("guardians")
-                    .select("id")
-                    .eq("email", guardianEmail)
-                    .single();
+      if (values.past_medical_history && values.past_medical_history.length > 0) {
+          const medicalHistoriesToInsert = values.past_medical_history.map((condition) => ({
+              health_record_id: currentHealthRecordId,
+              condition: condition,
+              had_condition: true,
+          }));
+          const { error: insertMHError } = await supabase
+              .from("medical_histories")
+              .insert(medicalHistoriesToInsert);
 
-                if (emailQueryError && emailQueryError.code !== 'PGRST116') {
-                    console.error(`Error querying guardian by email for ${relationship}:`, emailQueryError);
-                }
+          if (insertMHError) {
+              toast.error(`Failed to save new medical history: ${insertMHError.message}`);
+              console.error("Error inserting medical histories:", insertMHError);
+              await logActivity({ 
+                  userId: profileId,
+                  action: `Error inserting medical history for health_record_id ${currentHealthRecordId}: ${insertMHError.message}. Data: ${JSON.stringify(medicalHistoriesToInsert)}` 
+              });
+          }
+      }
 
-                if (existingGuardianByEmail) {
-                    guardianIdToLink = existingGuardianByEmail.id;
-                     // Optionally update this guardian's info if names/contacts differ
-                    const { error: guardianContactUpdateError } = await supabase
-                        .from("guardians")
-                        .update({ full_name: guardianName, contact_number: guardianContact || null })
-                        .eq("id", guardianIdToLink);
-                    if (guardianContactUpdateError) console.warn(`Could not update contact for existing guardian ${guardianEmail}: ${guardianContactUpdateError.message}`);
-                } else {
-                    // Guardian does not exist, insert new guardian
-                    const { data: newGuardian, error: guardianInsertError } = await supabase
-                        .from("guardians")
-                        .insert({
-                            full_name: guardianName,
-                            contact_number: guardianContact || null,
-                            email: guardianEmail,
-                            created_at: new Date().toISOString(),
-                        })
-                        .select("id")
-                        .single();
-                    if (guardianInsertError) throw new Error(`Failed to insert ${relationship}: ${guardianInsertError.message}`);
-                    if (!newGuardian) throw new Error(`${relationship} insert returned no data.`);
-                    guardianIdToLink = newGuardian.id;
-                }
-
-                // Create student_guardian link if it didn't exist for this relationship
-                if (!existingStudentGuardian) {
-                    const { error: sgInsertError } = await supabase
-                        .from("student_guardians")
-                        .insert({
-                            student_id: currentStudentId!,
-                            guardian_id: guardianIdToLink,
-                            relationship: relationship,
-                            is_primary: false,
-                        });
-                    if (sgInsertError) throw new Error(`Failed to link ${relationship} to student: ${sgInsertError.message}`);
-                }
-            }
-        };
-
-        await guardianUpserts(values.father_name, values.father_contact, values.father_email, "Father");
-        await guardianUpserts(values.mother_name, values.mother_contact, values.mother_email, "Mother");
-
-        // --- 3. Insert Health Record ---
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("User not available for submission.");
-
-        const { data: healthRecord, error: hrInsertError } = await supabase
-            .from("health_records")
-            .insert({
-                student_id: currentStudentId!,
-                allergies: values.allergies || null,
-                notes: "",
-                submitted_by: user.id,
-                status: "Pending",
-            })
-            .select("id")
-            .single();
-
-        if (hrInsertError) throw new Error(`Failed to submit health record: ${hrInsertError.message}`);
-        if (!healthRecord) throw new Error("Health record insert returned no data.");
-
-        // --- 4. Insert Medical History ---
-        if (values.past_medical_history && values.past_medical_history.length > 0) {
-            const medicalHistoriesToInsert = values.past_medical_history.map((condition) => ({
-                health_record_id: healthRecord.id,
-                condition: condition,
-                had_condition: true,
-            }));
-
-            const { error: mhInsertError } = await supabase
-                .from("medical_histories")
-                .insert(medicalHistoriesToInsert);
-
-            if (mhInsertError) throw new Error(`Failed to save medical history: ${mhInsertError.message}`);
-        }
-
-        toast.success("Health record submitted successfully!");
-        setIsEditMode(false);
-        // form.reset(); // Decide if you want to reset or keep pre-filled data
-
-        // Log activity
-        if (user && user.id) {
-          await logActivity({ userId: user.id, action: "Health record updated" });
-        }
-
-        // Re-fetch data to show the latest saved info, including the new health record details
-        setLoading(true);
-         const { data: latestStudentData, error: studentRefetchError } = await supabase
-            .from("students")
-            .select(`*, profile:profile_id (full_name)`)
-            .eq("id", currentStudentId!) // currentStudentId is from the upsert logic
-            .single();
-
-        if (studentRefetchError) {
-            toast.error("Error re-fetching student details.");
-        } else if (latestStudentData) {
-            form.setValue("student_name", latestStudentData.profile?.full_name || latestStudentData.student_name || "");
-            form.setValue("roll_number", latestStudentData.roll_number || "");
-            form.setValue("date_of_birth", latestStudentData.date_of_birth ? new Date(latestStudentData.date_of_birth) : null);
-            form.setValue("sex", latestStudentData.sex || undefined);
-            form.setValue("home_address", latestStudentData.home_address || "");
-            form.setValue("student_contact", latestStudentData.contact_number || ""); // Ensure field name matches form
-            form.setValue("academic_level", latestStudentData.academic_level || "");
-            form.setValue("year_level", latestStudentData.year_level || "");
-            form.setValue("academic_program", latestStudentData.academic_program || "");
-        }
-
-        // 2. Re-fetch Guardian Information
-        const { data: studentGuardians, error: sgRefetchError } = await supabase
-            .from("student_guardians")
-            .select(`relationship, guardian:guardian_id (full_name, contact_number, email)`)
-            .eq("student_id", currentStudentId!);
-
-        if (sgRefetchError) {
-            toast.error("Error re-fetching guardian information.");
-        } else if (studentGuardians) {
-            // Reset guardian fields before repopulating to handle cases where a guardian might have been removed (if applicable)
-            form.setValue("father_name", "");
-            form.setValue("father_contact", "");
-            form.setValue("father_email", "");
-            form.setValue("mother_name", "");
-            form.setValue("mother_contact", "");
-            form.setValue("mother_email", "");
-
-            studentGuardians.forEach(sg => {
-                const guardianData = sg.guardian ? (Array.isArray(sg.guardian) ? sg.guardian[0] : sg.guardian) : null;
-
-                if (guardianData) {
-                    if (sg.relationship === "Father") {
-                        form.setValue("father_name", guardianData.full_name || "");
-                        form.setValue("father_contact", guardianData.contact_number || "");
-                        form.setValue("father_email", guardianData.email || "");
-                    } else if (sg.relationship === "Mother") {
-                        form.setValue("mother_name", guardianData.full_name || "");
-                        form.setValue("mother_contact", guardianData.contact_number || "");
-                        form.setValue("mother_email", guardianData.email || "");
-                    }
-                }
-            });
-        }
-
-        if (healthRecord && healthRecord.id) { // Ensure healthRecord and its id are available
-            const { data: latestHealthRecord, error: hrRefetchError } = await supabase
-                .from("health_records")
-                .select("id, allergies")
-                .eq("id", healthRecord.id)
-                .single();
-
-            if (hrRefetchError) {
-                toast.error("Error re-fetching health record details.");
-            } else if (latestHealthRecord) {
-                form.setValue("allergies", latestHealthRecord.allergies || "");
-
-                // Fetch associated medical history for the newly fetched/confirmed health record
-                const { data: latestMedHistory, error: mhRefetchError } = await supabase
-                    .from("medical_histories")
-                    .select("condition")
-                    .eq("health_record_id", latestHealthRecord.id)
-                    .eq("had_condition", true);
-
-                if (mhRefetchError) {
-                    toast.error("Error re-fetching medical history.");
-                    form.setValue("past_medical_history", []);
-                } else if (latestMedHistory) {
-                    form.setValue("past_medical_history", latestMedHistory.map(mh => mh.condition));
-                } else {
-                    form.setValue("past_medical_history", []); // No history items found
-                }
-            } else {
-                // If health record itself couldn't be refetched
-                form.setValue("allergies", "");
-                form.setValue("past_medical_history", []);
-            }
-        } else {
-            // Fallback if healthRecord object or its ID wasn't available for some reason
-             form.setValue("allergies", ""); // Or values.allergies from the form before submit
-             form.setValue("past_medical_history", values.past_medical_history || []); // Or values from form
-             toast.warning("Could not re-fetch latest health details; health record ID was missing post-submission.");
-        }
-        
+      toast.success("Health record and medical history updated successfully!");
+      await logActivity({ 
+        userId: profileId,
+        action: `Health record and medical history updated for student ${studentId}. Health Record ID: ${currentHealthRecordId}`
+      });
+      
+      form.reset(values); // Reset form with the just submitted values
+      setIsEditMode(false); // Disable form fields
+      // Optionally, trigger a re-fetch of all data if you want to ensure the UI is perfectly synced
+      // await fetchInitialData(); 
 
     } catch (error: any) {
-        console.error("Submission error:", error);
-        toast.error(error.message || "An unexpected error occurred during submission.");
+      toast.error(`An unexpected error occurred: ${error.message}`);
+      console.error("Unexpected error in onSubmit:", error);
+      // Ensure profileId is available for logging, even in unexpected error scenarios
+      const loggerUserId = profileId || studentId || "unknown_user"; // Use profileId or studentId if available
+      await logActivity({
+        userId: loggerUserId,
+        action: `Unexpected error during health record submission. Student ID (if known): ${studentId || 'N/A'}. Error: ${error.message}`
+      });
     } finally {
-        setLoading(false);
+      setLoading(false); // End loading state regardless of outcome
     }
-};
+  };
+
+  // Helper function to manage guardian upserts (Create or Update)
+  const guardianUpserts = async (guardianName: string, guardianContact: string | undefined, guardianEmail: string, relationship: "Father" | "Mother") => {
+    if (!guardianName || !guardianEmail) return null; // Basic validation
+
+    // Check if guardian exists for this student with this relationship
+    const { data: existingStudentGuardian, error: sgQueryError } = await supabase
+        .from("student_guardians")
+        .select("guardian_id, guardian:guardian_id(*)")
+        .eq("student_id", studentId!)
+        .eq("relationship", relationship)
+        .single();
+
+    let guardianIdToLink: string;
+
+    if (sgQueryError && sgQueryError.code !== 'PGRST116') { // PGRST116 is ' exactamente una fila (o ninguna)'
+         console.error(`Error querying student_guardian for ${relationship}:`, sgQueryError);
+    }
+
+
+    if (existingStudentGuardian && existingStudentGuardian.guardian) {
+        // Guardian link exists, update guardian info
+        const { data: updatedGuardian, error: guardianUpdateError } = await supabase
+            .from("guardians")
+            .update({
+                full_name: guardianName,
+                contact_number: guardianContact || null,
+                email: guardianEmail,
+            })
+            .eq("id", existingStudentGuardian.guardian_id)
+            .select("id")
+            .single();
+        if (guardianUpdateError) throw new Error(`Failed to update ${relationship}: ${guardianUpdateError.message}`);
+        if (!updatedGuardian) throw new Error(`${relationship} update returned no data.`);
+        guardianIdToLink = updatedGuardian.id;
+    } else {
+        // No existing link for this relationship, or guardian doesn't exist.
+        // Try to find guardian by email first (assuming email is unique for guardians)
+        let { data: existingGuardianByEmail, error: emailQueryError } = await supabase
+            .from("guardians")
+            .select("id")
+            .eq("email", guardianEmail)
+            .single();
+
+        if (emailQueryError && emailQueryError.code !== 'PGRST116') {
+            console.error(`Error querying guardian by email for ${relationship}:`, emailQueryError);
+        }
+
+        if (existingGuardianByEmail) {
+            guardianIdToLink = existingGuardianByEmail.id;
+             // Optionally update this guardian's info if names/contacts differ
+            const { error: guardianContactUpdateError } = await supabase
+                .from("guardians")
+                .update({ full_name: guardianName, contact_number: guardianContact || null })
+                .eq("id", guardianIdToLink);
+            if (guardianContactUpdateError) console.warn(`Could not update contact for existing guardian ${guardianEmail}: ${guardianContactUpdateError.message}`);
+        } else {
+            // Guardian does not exist, insert new guardian
+            const { data: newGuardian, error: guardianInsertError } = await supabase
+                .from("guardians")
+                .insert({
+                    full_name: guardianName,
+                    contact_number: guardianContact || null,
+                    email: guardianEmail,
+                    created_at: new Date().toISOString(),
+                })
+                .select("id")
+                .single();
+            if (guardianInsertError) throw new Error(`Failed to insert ${relationship}: ${guardianInsertError.message}`);
+            if (!newGuardian) throw new Error(`${relationship} insert returned no data.`);
+            guardianIdToLink = newGuardian.id;
+        }
+
+        // Create student_guardian link if it didn't exist for this relationship
+        if (!existingStudentGuardian) {
+            const { error: sgInsertError } = await supabase
+                .from("student_guardians")
+                .insert({
+                    student_id: studentId!,
+                    guardian_id: guardianIdToLink,
+                    relationship: relationship,
+                    is_primary: false,
+                });
+            if (sgInsertError) throw new Error(`Failed to link ${relationship} to student: ${sgInsertError.message}`);
+        }
+    }
+  };
 
   if (loading) return <p className="text-center py-4">Loading...</p>;
 
