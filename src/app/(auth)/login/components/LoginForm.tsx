@@ -76,7 +76,7 @@ export function LoginForm() {
           {isResettingPassword ? "Reset Your Password" : "Login"}
         </CardTitle>
         <CardDescription>
-          Enter your email below to {isResettingPassword ? "reset your password" : "login to your account"}
+        Enter your email {isResettingPassword ? "below to reset your password" : "and password to login"}
         </CardDescription>
       </CardHeader>
       <CardContent>
