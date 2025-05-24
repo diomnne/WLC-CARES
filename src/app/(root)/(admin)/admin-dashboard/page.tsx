@@ -92,7 +92,7 @@ const AdminDashboard = () => {
           </div>
 
           {/* Top row widgets */}
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-white border shadow rounded-md p-4 flex items-center justify-between">
               <div>
                 <div className="text-xl text-gray-800 font-bold">
@@ -121,14 +121,6 @@ const AdminDashboard = () => {
                 <div className="text-sm text-gray-500">Clinic Staff</div>
               </div>
               <BriefcaseMedical className="w-10 h-10 text-[#addbda]" />
-            </div>
-
-            <div className="bg-white border shadow rounded-md p-4 flex items-center justify-between">
-              <div>
-                <div className="text-xl text-gray-800 font-bold">15</div>
-                <div className="text-sm text-gray-500">Pending Requests</div>
-              </div>
-              <Inbox className="w-10 h-10 text-[#9de0bf]" />
             </div>
           </div>
 
