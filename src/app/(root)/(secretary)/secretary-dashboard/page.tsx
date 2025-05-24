@@ -86,16 +86,20 @@ const SecretaryDashboard = () => {
   }, []);
 
   const handleUpdateStatus = async (consultation_id: string, status: string) => {
-    const { error } = await supabase
+    console.log(`handleUpdateStatus called with consultation_id: ${consultation_id}, status: ${status}`);
+
+    const { data: updateData, error } = await supabase
       .from("consultations")
       .update({ status })
-      .eq("consultation_id", consultation_id);
+      .eq("consultation_id", consultation_id)
+      .select();
+
+    console.log(`Supabase update response for consultation_id: ${consultation_id}, new_status: ${status}`, { updateData, error });
 
     if (error) {
-      console.error("Error updating status:", error);
-      
+      console.error(`Error updating status for ${consultation_id} to ${status}:`, error);
     } else {
-     
+      console.log(`Successfully updated status for ${consultation_id} to ${status}. Response data:`, updateData);
       fetchDashboardData();
     }
   };
