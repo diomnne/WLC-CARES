@@ -6,6 +6,8 @@ import {
   getCoreRowModel,
   useReactTable,
   getPaginationRowModel,
+  PaginationState,
+  OnChangeFn,
 } from "@tanstack/react-table";
 import {
   Table,
@@ -33,7 +35,7 @@ import { ChevronDown } from "lucide-react";
 
 const supabase = createClient();
 
-const USER_ROLES = ["Admin", "Student", "Staff", "User"];
+const USER_ROLES = ["Admin", "Student", "Doctor", "Nurse", "Secretary"];
 
 export type User = {
   id: string;
@@ -42,18 +44,26 @@ export type User = {
   avatar_url: string | null;
   role: string;
   created_at: string;
-  is_active: boolean;
   user_id: string;
 };
 
 interface UserTableProps {
   data: User[];
   onUpdateRole: (profileId: string, newRole: string) => Promise<void>;
-  onToggleStatus: (profileId: string, currentIsActive: boolean, authUserId: string) => Promise<void>;
   currentUserId: string | null;
+  rowCount: number;
+  pagination: PaginationState;
+  onPaginationChange: OnChangeFn<PaginationState>;
 }
 
-export function UserTable({ data, onUpdateRole, onToggleStatus, currentUserId }: UserTableProps) {
+export function UserTable({ 
+  data, 
+  onUpdateRole, 
+  currentUserId, 
+  rowCount, 
+  pagination, 
+  onPaginationChange 
+}: UserTableProps) {
   const handleRoleChange = async (profileId: string, newRole: string) => {
     if (!currentUserId) {
       toast.error("Admin user ID not found. Cannot log activity.");
@@ -62,25 +72,10 @@ export function UserTable({ data, onUpdateRole, onToggleStatus, currentUserId }:
     try {
       await onUpdateRole(profileId, newRole);
       toast.success(`User role updated to ${newRole}.`);
-      await logActivity({ userId: currentUserId, action: `Changed role of user ${profileId} to ${newRole}` });
+      await logActivity({ userId: currentUserId, action: `Changed user role` });
     } catch (error) {
       toast.error("Failed to update role.");
       console.error("Role update error:", error);
-    }
-  };
-
-  const handleStatusToggle = async (profileId: string, isActive: boolean, authUserId: string) => {
-    if (!currentUserId) {
-      toast.error("Admin user ID not found. Cannot log activity.");
-      return;
-    }
-    try {
-      await onToggleStatus(profileId, isActive, authUserId);
-      toast.success(`User account ${isActive ? "deactivated" : "activated"}.`);
-      await logActivity({ userId: currentUserId, action: `User ${profileId} account ${isActive ? "deactivated" : "activated"}` });
-    } catch (error) {
-      toast.error("Failed to update account status.");
-      console.error("Status toggle error:", error);
     }
   };
 
@@ -139,11 +134,6 @@ export function UserTable({ data, onUpdateRole, onToggleStatus, currentUserId }:
       ),
     },
     {
-      accessorKey: "is_active",
-      header: "Status",
-      cell: ({ row }) => (row.original.is_active ? "Active" : "Inactive"),
-    },
-    {
       accessorKey: "created_at",
       header: "Created At",
       cell: ({ row }) =>
@@ -153,19 +143,6 @@ export function UserTable({ data, onUpdateRole, onToggleStatus, currentUserId }:
           day: "numeric",
         }),
     },
-    {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }) => (
-        <Button
-          variant={row.original.is_active ? "destructive" : "outline"}
-          size="sm"
-          onClick={() => handleStatusToggle(row.original.id, row.original.is_active, row.original.user_id)}
-        >
-          {row.original.is_active ? "Deactivate" : "Activate"}
-        </Button>
-      ),
-    },
   ];
 
   const table = useReactTable({
@@ -173,11 +150,12 @@ export function UserTable({ data, onUpdateRole, onToggleStatus, currentUserId }:
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      pagination: {
-        pageSize: 8,
-      },
+    manualPagination: true,
+    rowCount,
+    state: {
+      pagination,
     },
+    onPaginationChange,
   });
 
   return (
